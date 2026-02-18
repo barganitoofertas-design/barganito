@@ -1,0 +1,121 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 0.8rem; /* Reduced padding */
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  height: 100%;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: var(--primary);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.7rem;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(255, 77, 77, 0.3);
+}
+
+.imageContainer {
+  width: 100%;
+  aspect-ratio: 1/1;
+  background: #f9f9f9;
+  border-radius: calc(var(--radius) - 6px);
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.imageContainer img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition);
+}
+
+.card:hover .imageContainer img {
+  transform: scale(1.08); /* Slightly subtler zoom */
+}
+
+.placeholder {
+  color: var(--text-light);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.category {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--primary);
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+  letter-spacing: 0.5px;
+}
+
+.title {
+  font-size: 0.95rem; /* Reduced font size */
+  font-weight: 600;
+  color: var(--secondary);
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.4rem;
+  line-height: 1.2;
+}
+
+.priceContainer {
+  margin-top: auto;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.currentPrice {
+  font-size: 1.1rem; /* Reduced font size */
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.originalPrice {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  text-decoration: line-through;
+}
+
+.footer {
+  margin-top: auto;
+}
+
+/* Specific button styling override for the card context if needed, 
+   though global .btn class is used in TSX. We can target it here too. */
+.card button {
+  padding: 0.5rem 1rem !important; /* Force smaller padding */
+  font-size: 0.9rem !important;
+}

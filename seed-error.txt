@@ -1,0 +1,18 @@
+Cleaning database...
+Seed failed: PrismaClientKnownRequestError: 
+Invalid `prisma.category.deleteMany()` invocation in
+C:\Users\jto\Documents\meuSistema\barganito\prisma\seed.ts:12:21
+
+   9 prisma.priceHistory.deleteMany(),
+  10 prisma.notificationConfig.deleteMany(),
+  11 prisma.product.deleteMany(),
+→ 12 prisma.category.deleteMany(
+The table `public.Category` does not exist in the current database.
+    at ei.handleRequestError (C:\Users\jto\Documents\meuSistema\barganito\node_modules\@prisma\client\src\runtime\RequestHandler.ts:228:13)
+    at ei.handleAndLogRequestError (C:\Users\jto\Documents\meuSistema\barganito\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\jto\Documents\meuSistema\barganito\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at async a (C:\Users\jto\Documents\meuSistema\barganito\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24) {
+  code: 'P2021',
+  meta: { modelName: 'Category', table: 'public.Category' },
+  clientVersion: '6.19.2'
+}
