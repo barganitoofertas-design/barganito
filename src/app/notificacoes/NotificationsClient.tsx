@@ -11,7 +11,7 @@ interface Notification {
   id: string;
   title: string;
   message: string;
-  link?: string;
+  link: string | null;
   type: string;
   isRead: boolean;
   createdAt: Date;
