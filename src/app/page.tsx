@@ -1,19 +1,73 @@
 import Sidebar from "@/components/Sidebar/Sidebar";
 import ProductCard from "@/components/ProductCard/ProductCard";
 import Pagination from "@/components/Pagination/Pagination";
+import { prisma } from "@/lib/prisma";
 
 async function getProducts(searchParams: { [key: string]: string | string[] | undefined }) {
-  const query = new URLSearchParams();
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (value) query.append(key, String(value));
-  });
+  const category = searchParams.category as string | undefined;
+  const search = searchParams.search as string | undefined;
+  const page = parseInt((searchParams.page as string) || "1");
+  const limit = 20;
+  const skip = (page - 1) * limit;
 
-  const res = await fetch(`http://localhost:3000/api/products?${query.toString()}`, {
-    next: { revalidate: 60 },
-  });
-  
-  if (!res.ok) return { data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } };
-  return res.json();
+  const now = new Date();
+  const where: any = {
+    promotions: {
+      some: {
+        isActive: true,
+        startsAt: { lte: now },
+        expiresAt: { gte: now }
+      }
+    }
+  };
+
+  if (category && category !== 'all') {
+    where.category = { slug: category };
+  }
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { description: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  try {
+    const [products, total] = await Promise.all([
+      (prisma as any).product.findMany({
+        where,
+        include: {
+          category: true,
+          promotions: {
+            where: {
+              isActive: true,
+              startsAt: { lte: now },
+              expiresAt: { gte: now }
+            },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      (prisma as any).product.count({ where }),
+    ]);
+
+    return {
+      data: products,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    console.error('Failed to fetch products:', error);
+    return { data: [], pagination: { total: 0, page: 1, limit: 20, totalPages: 0 } };
+  }
 }
 
 export default async function Home({
