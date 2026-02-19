@@ -88,7 +88,7 @@ export default async function Home({
     <>
       <Sidebar />
       <section className="feed">
-        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
           <h1>{categoryName}</h1>
           <div className="filters">
             <select style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border)' }}>
@@ -99,7 +99,7 @@ export default async function Home({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
           {products.length > 0 ? (
             products.map((product: any) => (
               <ProductCard key={product.id} product={product} />

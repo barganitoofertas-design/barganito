@@ -45,8 +45,8 @@ export default function PromotionManager({ categories }: PromotionManagerProps) 
         .admin-grid {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 1.5rem;
-          margin-bottom: 3rem;
+          gap: 1rem;
+          margin-bottom: 2rem;
           align-items: start;
         }
 
@@ -54,6 +54,7 @@ export default function PromotionManager({ categories }: PromotionManagerProps) 
           .admin-grid {
             grid-template-columns: 1fr 1fr;
             gap: 2rem;
+            margin-bottom: 3rem;
           }
         }
       `}</style>

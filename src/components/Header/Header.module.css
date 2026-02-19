@@ -249,8 +249,31 @@
   background: #fef2f2;
 }
 
+.authButtons {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 @media (max-width: 768px) {
   .searchBar {
     display: none;
+  }
+
+  .logo {
+    font-size: 1.3rem;
+  }
+
+  .nav {
+    gap: 0.75rem;
+  }
+
+  .authButtons {
+    gap: 0.5rem;
+  }
+
+  .authButtons .btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
   }
 }

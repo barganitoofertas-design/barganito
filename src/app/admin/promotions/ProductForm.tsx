@@ -89,7 +89,7 @@ export default function ProductForm({ categories }: { categories: Category[] }) 
   };
 
   return (
-    <div style={{ background: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', position: 'relative' }}>
+    <div style={{ background: 'var(--card-bg)', padding: 'clamp(1rem, 5vw, 2rem)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', position: 'relative' }}>
       {loading && !message && (
         <div style={{
           position: 'absolute',

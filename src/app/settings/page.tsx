@@ -93,7 +93,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.2rem' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1.2rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ fontWeight: 600, fontSize: '0.85rem' }}>Categoria (Opcional)</label>
               <select 
@@ -150,7 +150,7 @@ export default function SettingsPage() {
               Você ainda não tem alertas configurados. <br/> Comece criando um acima!
             </p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
               {configs.map((config: any) => (
                 <div key={config.id} style={{ 
                   display: 'flex', 
