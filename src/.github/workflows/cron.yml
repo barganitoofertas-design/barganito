@@ -1,0 +1,15 @@
+name: Price Check Cron
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  call-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call price check endpoint
+        run: |
+          curl -X GET "https://barganito.vercel.app/api/cron/check-alerts?token=${{ secrets.CRON_SECRET }}"
