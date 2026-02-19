@@ -1,8 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/check-alerts?token=barganito_secret_123",
-      "schedule": "*/5 * * * *"
-    }
-  ]
-}
+{}
