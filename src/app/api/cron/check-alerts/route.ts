@@ -5,96 +5,87 @@ import { sendNotification } from '@/lib/notifications';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  // Verification token to prevent unauthorized calls
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
-  
+
   if (token !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   }
 
   try {
-    // 1. Get all active alerts using raw SQL
-    // Join with Category to get category name if needed
+    const now = new Date();
+
+    // BATCH: 1 query - Get all active alerts
     const alerts = await prisma.$queryRawUnsafe<any[]>(
       `SELECT nc.*, c.name as "categoryName" 
        FROM "NotificationConfig" nc
        LEFT JOIN "Category" c ON nc."categoryId" = c.id`
     );
 
-    const results = {
-      checked: alerts.length,
-      triggered: 0,
-      errors: 0,
-    };
+    if (alerts.length === 0) {
+      return NextResponse.json({ success: true, results: { checked: 0, triggered: 0, errors: 0 } });
+    }
 
-    // 2. For each alert, check for matching products/promotions
-    for (const alert of alerts) {
-      const {
-        id: alertId,
-        userId,
-        categoryId,
-        productNamePattern,
-        targetPrice,
-        targetDiscount,
-        lastAlertSentAt,
-        createdAt: alertCreatedAt
-      } = alert;
-
-      // Define time window (since last alert or last 15 mins)
-      const lastCheck = lastAlertSentAt || new Date(Date.now() - 15 * 60 * 1000);
-      
-      const startTime = new Date(Math.max(
-        new Date(alertCreatedAt).getTime(), 
-        new Date(lastCheck).getTime()
-      ));
-
-      const now = new Date();
-
-      // Search for ALL active promotions that match the alert criteria
-      // We DON'T filter by createdAt since the user wants to know about any matching deal
-      const promotionWhere: any = {
+    // BATCH: 1 query - Get all active, non-expired promotions with their products
+    const activePromotions = await (prisma as any).promotion.findMany({
+      where: {
         isActive: true,
-        expiresAt: { gt: now }, // Must not be expired
-        product: {},
-      };
+        expiresAt: { gt: now },
+      },
+      include: { product: { include: { category: true } } },
+    });
 
-      // Category match
-      if (categoryId) promotionWhere.product.categoryId = categoryId;
+    if (activePromotions.length === 0) {
+      return NextResponse.json({ success: true, results: { checked: alerts.length, triggered: 0, errors: 0 } });
+    }
 
-      // Pattern match
-      if (productNamePattern) {
-        promotionWhere.product.name = {
-          contains: productNamePattern,
-          mode: 'insensitive',
-        };
-      }
+    // BATCH: 1 query - Get all notification links already sent to alert users (dedup)
+    const userIds = [...new Set(alerts.map((a: any) => a.userId))];
+    const promoLinks = activePromotions.map((p: any) => `/oferta/${p.id}`);
 
-      // Price match
-      if (targetPrice) promotionWhere.product.currentPrice = { lte: targetPrice };
+    const existingNotifications = await prisma.$queryRawUnsafe<{ userId: string; link: string }[]>(
+      `SELECT "userId", "link" FROM "Notification" 
+       WHERE "userId" = ANY($1::text[]) 
+       AND "link" = ANY($2::text[])`,
+      userIds,
+      promoLinks
+    );
 
-      // Discount match 
-      if (targetDiscount) promotionWhere.discountPercentage = { gte: targetDiscount };
+    // Build a lookup Set for O(1) dedup checks: "userId|link"
+    const sentSet = new Set(existingNotifications.map(n => `${n.userId}|${n.link}`));
 
-      const matchingPromotions = await (prisma as any).promotion.findMany({
-        where: promotionWhere,
-        include: { product: true },
+    const results = { checked: alerts.length, triggered: 0, errors: 0 };
+
+    // Match alerts to promotions IN MEMORY (no more per-alert queries)
+    for (const alert of alerts) {
+      const { id: alertId, userId, categoryId, productNamePattern, targetPrice, targetDiscount } = alert;
+
+      const matches = activePromotions.filter((promo: any) => {
+        const product = promo.product;
+
+        // Category filter
+        if (categoryId && product.categoryId !== categoryId) return false;
+
+        // Name pattern filter
+        if (productNamePattern && !product.name.toLowerCase().includes(productNamePattern.toLowerCase())) return false;
+
+        // Price filter
+        if (targetPrice && product.currentPrice > targetPrice) return false;
+
+        // Discount filter
+        if (targetDiscount && (!promo.discountPercentage || promo.discountPercentage < targetDiscount)) return false;
+
+        return true;
       });
 
-      // 3. Trigger notifications for each match
-      for (const promo of matchingPromotions) {
+      for (const promo of matches) {
+        const promoLink = `/oferta/${promo.id}`;
+        const dedupKey = `${userId}|${promoLink}`;
+
+        // Skip if already notified (O(1) lookup)
+        if (sentSet.has(dedupKey)) continue;
+
         try {
-          const promoLink = `/oferta/${promo.id}`;
-
-          // Check if a notification for this promo was already sent to this user
-          const existing = await prisma.$queryRawUnsafe<any[]>(
-            `SELECT id FROM "Notification" WHERE "userId" = $1 AND "link" = $2 LIMIT 1`,
-            userId,
-            promoLink
-          );
-
-          if (existing.length > 0) continue; // Skip - already notified
-
           await sendNotification({
             userId,
             title: `Alerta de Preço: ${promo.product.name}`,
@@ -102,6 +93,9 @@ export async function GET(request: Request) {
             link: promoLink,
             type: 'alert',
           });
+
+          // Mark as sent in memory to avoid sending again within the same run
+          sentSet.add(dedupKey);
           results.triggered++;
         } catch (e) {
           console.error(`Error sending notification for alert ${alertId}:`, e);
@@ -109,21 +103,17 @@ export async function GET(request: Request) {
         }
       }
 
-      // 4. Update lastAlertSentAt if matches were found using raw SQL
-      if (matchingPromotions.length > 0) {
+      // Update lastAlertSentAt only if there were matches
+      if (matches.length > 0) {
         await prisma.$executeRawUnsafe(
           `UPDATE "NotificationConfig" SET "lastAlertSentAt" = $1 WHERE "id" = $2`,
-          new Date(),
+          now,
           alertId
         );
       }
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      timestamp: new Date().toISOString(),
-      results 
-    });
+    return NextResponse.json({ success: true, timestamp: now.toISOString(), results });
 
   } catch (error: any) {
     console.error('Alert cron failed:', error);
