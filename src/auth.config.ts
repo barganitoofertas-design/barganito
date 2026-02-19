@@ -23,10 +23,14 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isAdminRoute = nextUrl.pathname.startsWith('/admin');
-      
+
       if (isAdminRoute) {
-        if (isLoggedIn && (auth.user as any).role === 'ADMIN') return true;
-        return false;
+        if (!isLoggedIn) {
+          // Not logged in — redirect to login
+          return Response.redirect(new URL('/auth/login', nextUrl));
+        }
+        const role = ((auth.user as any).role || '').toLowerCase();
+        return role === 'admin'; // accepts 'admin', 'ADMIN', etc.
       }
       return true;
     },
