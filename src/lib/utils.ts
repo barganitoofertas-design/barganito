@@ -1,4 +1,42 @@
 /**
+ * Converte uma string de input datetime-local (YYYY-MM-DDTHH:mm) interpretada como
+ * horário de Brasília (America/Sao_Paulo) para um objeto Date UTC correto.
+ * Use esta função ao receber datas de formulários para salvar no banco.
+ */
+export function parseBRInputToUTC(value: string): Date {
+  if (!value) return new Date();
+  // O input datetime-local retorna "YYYY-MM-DDTHH:mm" sem timezone.
+  // Interpretamos como America/Sao_Paulo (UTC-3 no inverno, UTC-2 no horário de verão).
+  // A forma mais confiável é usar Intl para descobrir o offset real de SP no instante dado.
+  const naive = new Date(value); // interpretado como local do servidor (pode ser UTC na Vercel)
+  if (isNaN(naive.getTime())) return new Date();
+
+  // Descobre o offset de Sao Paulo nesse instante via Intl
+  const spFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  });
+
+  // Gera um Date tratando o valor do input como se fosse UTC,
+  // depois corrige somando o offset de SP
+  const asUTC = new Date(value + 'Z'); // força interpretação UTC
+  if (isNaN(asUTC.getTime())) return new Date();
+
+  // Obtém a representação de SP para esse instante UTC
+  const parts = spFormatter.formatToParts(asUTC);
+  const get = (t: string) => parseInt(parts.find(p => p.type === t)?.value ?? '0');
+  const spDate = new Date(Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second')));
+
+  // O offset de SP neste momento = asUTC - spDate (em ms)
+  const offsetMs = asUTC.getTime() - spDate.getTime();
+
+  // Data correta em UTC = asUTC + offsetMs
+  return new Date(asUTC.getTime() + offsetMs);
+}
+
+/**
  * Formata uma data para o padrão de Brasília (pt-BR)
  */
 export function formatDateTime(date: Date | string | null | undefined): string {

@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
+import { parseBRInputToUTC } from '@/lib/utils';
 
 export async function getPromotions(params: { page?: number, pageSize?: number, query?: string } = {}) {
   const { page = 1, pageSize = 10, query = '' } = params;
@@ -80,14 +81,14 @@ export async function createPromotion(formData: FormData) {
       return { success: false, message: 'A Data de Expiração é obrigatória.' };
     }
 
-    const expiresAt = new Date(expiresAtStr);
+    const expiresAt = parseBRInputToUTC(expiresAtStr);
     if (isNaN(expiresAt.getTime())) {
       return { success: false, message: 'Data de expiração inválida.' };
     }
 
     let startsAt = new Date();
     if (startsAtStr) {
-      startsAt = new Date(startsAtStr);
+      startsAt = parseBRInputToUTC(startsAtStr);
       if (isNaN(startsAt.getTime())) {
         startsAt = new Date();
       }
@@ -150,14 +151,14 @@ export async function updatePromotion(id: string, formData: FormData) {
       return { success: false, message: 'A Data de Expiração é obrigatória.' };
     }
 
-    const expiresAt = new Date(expiresAtStr);
+    const expiresAt = parseBRInputToUTC(expiresAtStr);
     if (isNaN(expiresAt.getTime())) {
       return { success: false, message: 'Data de expiração inválida.' };
     }
 
     let startsAt = new Date();
     if (startsAtStr) {
-      startsAt = new Date(startsAtStr);
+      startsAt = parseBRInputToUTC(startsAtStr);
       if (isNaN(startsAt.getTime())) {
         startsAt = new Date();
       }
