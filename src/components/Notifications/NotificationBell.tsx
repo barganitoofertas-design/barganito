@@ -126,7 +126,7 @@ export default function NotificationBell() {
                   onClick={handleSubscribe}
                   disabled={isSubscribing}
                 >
-                  {isSubscribing ? 'Ativando...' : '🔔 Ativar Push'}
+                  {isSubscribing ? 'Ativando...' : '🔔 Ativar Notificação'}
                 </button>
               )}
               {unreadCount > 0 && (

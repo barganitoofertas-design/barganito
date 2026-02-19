@@ -66,7 +66,7 @@ export default function PromotionForm({ initialData, categories, onCancel, onSuc
   };
 
   return (
-    <div style={{ background: 'var(--card-bg)', padding: '2rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', position: 'relative', maxHeight: '85vh', overflowY: 'auto' }}>
+    <div className="promotion-form-container" style={{ background: 'var(--card-bg)', padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
       {loading && !message && (
         <div style={{
           position: 'absolute',
@@ -116,6 +116,21 @@ export default function PromotionForm({ initialData, categories, onCancel, onSuc
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        .responsive-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+        @media (min-width: 640px) {
+          .responsive-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+        @media (max-width: 480px) {
+          .promotion-form-container {
+            padding: 1rem !important;
+          }
+        }
       `}</style>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
@@ -131,7 +146,7 @@ export default function PromotionForm({ initialData, categories, onCancel, onSuc
             )}
             {initialData && <input type="hidden" name="productId" value={initialData.product.id} />}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="responsive-grid">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 <label htmlFor="discountPercentage">Desconto (%)</label>
                 <input 
@@ -171,7 +186,7 @@ export default function PromotionForm({ initialData, categories, onCancel, onSuc
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="responsive-grid">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 <label htmlFor="startsAt">Início</label>
                 <input 
@@ -198,6 +213,7 @@ export default function PromotionForm({ initialData, categories, onCancel, onSuc
           </div>
         </div>
 
+
         {/* Dados do Produto (Apenas na Edição) */}
         {initialData && (
           <div style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px' }}>
@@ -223,7 +239,7 @@ export default function PromotionForm({ initialData, categories, onCancel, onSuc
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="responsive-grid">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                     <label htmlFor="productPrice">Preço Original (R$)</label>
                     <input 

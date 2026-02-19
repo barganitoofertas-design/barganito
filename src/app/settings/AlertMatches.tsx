@@ -47,7 +47,7 @@ export default function AlertMatches({ refreshKey }: { refreshKey: number }) {
 
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
         gap: '1.5rem' 
       }}>
         {products.map((product) => {

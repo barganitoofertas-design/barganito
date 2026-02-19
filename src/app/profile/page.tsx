@@ -16,14 +16,14 @@ export default async function ProfilePage() {
         <h1 style={{ marginBottom: '2rem', textAlign: 'center' }}>Meu Perfil</h1>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
-            <span style={{ fontWeight: 'bold', color: 'var(--text-light)' }}>Nome:</span>
-            <span>{user?.name || 'Não informado'}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 'bold', color: 'var(--text-light)', whiteSpace: 'nowrap' }}>Nome:</span>
+            <span style={{ overflowWrap: 'break-word', minWidth: 0 }}>{user?.name || 'Não informado'}</span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
-            <span style={{ fontWeight: 'bold', color: 'var(--text-light)' }}>Email:</span>
-            <span>{user?.email}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 'bold', color: 'var(--text-light)', whiteSpace: 'nowrap' }}>Email:</span>
+            <span style={{ overflowWrap: 'break-word', wordBreak: 'break-all', minWidth: 0 }}>{user?.email}</span>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>

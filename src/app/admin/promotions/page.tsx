@@ -15,8 +15,8 @@ export default async function AdminPromotionsPage() {
   });
 
   return (
-    <div className="container" style={{ padding: '2rem 0' }}>
-      <h1 style={{ marginBottom: '2rem' }}>Painel Administrativo</h1>
+    <div className="container" style={{ padding: '2rem 1rem' }}>
+      <h1 style={{ marginBottom: '2rem', fontSize: 'clamp(1.5rem, 5vw, 2.5rem)' }}>Painel Administrativo</h1>
       <PromotionManager categories={categories} />
     </div>
   );

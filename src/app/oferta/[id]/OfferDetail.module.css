@@ -160,6 +160,40 @@
   font-size: 1.05rem;
 }
 
+@media (max-width: 600px) {
+  .grid {
+    padding: 1.25rem;
+    gap: 1.5rem;
+  }
+
+  .imageSection {
+    height: auto;
+    max-height: 280px;
+    padding: 1rem;
+  }
+
+  .productTitle {
+    font-size: 1.4rem;
+  }
+
+  .value {
+    font-size: 2.2rem;
+  }
+
+  .currency {
+    font-size: 1rem;
+  }
+
+  .priceCard {
+    padding: 1.25rem;
+  }
+
+  .buyButton {
+    font-size: 1rem;
+    padding: 1rem;
+  }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }

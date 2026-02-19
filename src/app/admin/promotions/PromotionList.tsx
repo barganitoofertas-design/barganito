@@ -109,7 +109,7 @@ export default function PromotionList({ onEdit }: PromotionListProps) {
             className="btn-refresh"
             style={{ 
               height: '42px',
-              padding: '0 1.5rem', 
+              padding: '0 1.2rem', 
               border: 'none', 
               background: 'var(--primary)',
               color: 'white',
@@ -118,11 +118,12 @@ export default function PromotionList({ onEdit }: PromotionListProps) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.5rem',
+              gap: '0.4rem',
               transition: 'all 0.2s ease',
               borderRadius: '12px',
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              fontSize: '0.9rem'
             }}
             onMouseOver={(e) => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
             onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
@@ -202,7 +203,7 @@ export default function PromotionList({ onEdit }: PromotionListProps) {
           <tbody>
             {promotions.length === 0 && !loading ? (
               <tr>
-                <td colSpan={7} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-light)' }}>
+                <td colSpan={8} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-light)' }}>
                   <div style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>📭</div>
                   Nenhuma promoção encontrada.
                 </td>
@@ -246,19 +247,20 @@ export default function PromotionList({ onEdit }: PromotionListProps) {
                     {formatDateTime(promo.updatedAt || promo.createdAt)}
                   </td>
                   <td style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <button 
                         onClick={() => onEdit && onEdit(promo)}
                         style={{ 
-                          padding: '6px 12px', 
+                          padding: '6px 10px', 
                           borderRadius: '6px', 
-                          fontSize: '0.85rem',
+                          fontSize: '0.8rem',
                           fontWeight: '600',
                           background: 'var(--background)',
                           color: 'var(--text)',
                           border: '1px solid var(--border)',
                           cursor: 'pointer',
-                          transition: 'all 0.1s'
+                          transition: 'all 0.1s',
+                          whiteSpace: 'nowrap'
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
                         onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
@@ -268,15 +270,16 @@ export default function PromotionList({ onEdit }: PromotionListProps) {
                       <button 
                         onClick={() => handleToggleStatus(promo.id, promo.isActive)}
                         style={{ 
-                          padding: '6px 12px', 
+                          padding: '6px 10px', 
                           borderRadius: '6px', 
-                          fontSize: '0.85rem',
+                          fontSize: '0.8rem',
                           fontWeight: '600',
                           background: promo.isActive ? '#fee2e2' : '#d1fae5',
                           color: promo.isActive ? '#991b1b' : '#065f46',
                           border: 'none',
                           cursor: 'pointer',
-                          transition: 'transform 0.1s'
+                          transition: 'transform 0.1s',
+                          whiteSpace: 'nowrap'
                         }}
                         onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
                         onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -286,20 +289,21 @@ export default function PromotionList({ onEdit }: PromotionListProps) {
                       <button 
                         onClick={() => handleDelete(promo.id)}
                         style={{ 
-                          padding: '6px 12px', 
+                          padding: '6px 10px', 
                           borderRadius: '6px', 
-                          fontSize: '0.85rem',
+                          fontSize: '0.8rem',
                           fontWeight: '600',
                           background: 'white',
                           color: '#dc2626',
                           border: '1px solid #fee2e2',
                           cursor: 'pointer',
-                          transition: 'all 0.1s'
+                          transition: 'all 0.1s',
+                          whiteSpace: 'nowrap'
                         }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#fca5a5'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#fee2e2'; }}
                       >
-                        🗑️ Excluir
+                        🗑️
                       </button>
                     </div>
                   </td>
