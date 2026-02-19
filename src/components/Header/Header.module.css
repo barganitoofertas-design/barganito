@@ -61,10 +61,192 @@
   color: var(--primary);
 }
 
-.userMenu {
+.userMenuContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.userAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  padding: 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.userAvatar:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+}
+
+.avatarText {
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: -0.5px;
+}
+
+.statusDot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: #10b981;
+  border: 2px solid var(--card-bg);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.activeDot {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.premiumDropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 280px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 1001;
+  overflow: hidden;
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dropdownHeader {
+  padding: 1.5rem;
+  background: var(--background);
   display: flex;
   align-items: center;
   gap: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.headerAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--background);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.headerInfo {
+  flex: 1;
+  overflow: hidden;
+}
+
+.headerName {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 1rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerEmail {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin: 0.1rem 0 0.4rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roleBadge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  background: var(--primary-light, #e0e7ff);
+  color: var(--primary);
+  border-radius: 20px;
+}
+
+.menuGrid {
+  padding: 0.5rem;
+}
+
+.menuLink, .menuLinkAdmin {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 0.9rem;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.menuLink:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--primary);
+  transform: translateX(4px);
+}
+
+.menuLinkAdmin {
+  color: var(--secondary);
+}
+
+.menuLinkAdmin:hover {
+  background: rgba(245, 158, 11, 0.05);
+  color: #d97706;
+  transform: translateX(4px);
+}
+
+.dropdownFooter {
+  padding: 0.5rem;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}
+
+.premiumLogoutBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.premiumLogoutBtn:hover {
+  background: #fef2f2;
 }
 
 @media (max-width: 768px) {

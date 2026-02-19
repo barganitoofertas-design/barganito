@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import styles from './Header.module.css';
 import { auth } from '@/auth';
+import SearchInput from './SearchInput';
+import UserMenu from './UserMenu';
+import NotificationBell from '../Notifications/NotificationBell';
 
 export default async function Header() {
   const session = await auth();
@@ -12,17 +15,14 @@ export default async function Header() {
           Barganito<span>Ofertas</span>
         </Link>
         
-        <div className={styles.searchBar}>
-          <input type="text" placeholder="Buscar promoções..." />
-          <button className="btn btn-primary">Buscar</button>
-        </div>
+        <SearchInput />
 
         <nav className={styles.nav}>
           {session ? (
-            <div className={styles.userMenu}>
-              <span>Olá, {session.user?.name || 'Usuário'}</span>
-              <Link href="/settings" className="btn btn-primary">Alertas</Link>
-            </div>
+            <>
+              <NotificationBell />
+              <UserMenu user={session.user as any} />
+            </>
           ) : (
             <div className={styles.authButtons}>
               <Link href="/auth/login" className={styles.loginBtn}>Entrar</Link>

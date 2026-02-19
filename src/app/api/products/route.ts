@@ -11,7 +11,16 @@ export async function GET(req: Request) {
   const skip = (page - 1) * limit;
 
   try {
-    const where: any = {};
+    const now = new Date();
+    const where: any = {
+      promotions: {
+        some: {
+          isActive: true,
+          startsAt: { lte: now },
+          expiresAt: { gte: now }
+        }
+      }
+    };
 
     if (category && category !== 'all') {
       where.category = {
@@ -27,20 +36,25 @@ export async function GET(req: Request) {
     }
 
     const [products, total] = await Promise.all([
-      prisma.product.findMany({
+      (prisma as any).product.findMany({
         where,
         include: {
           category: true,
           promotions: {
+            where: { 
+              isActive: true,
+              startsAt: { lte: now },
+              expiresAt: { gte: now }
+            },
             orderBy: { createdAt: "desc" },
             take: 1,
           },
         },
-        orderBy: recent ? { updatedAt: "desc" } : { name: "asc" },
+        orderBy: { updatedAt: "desc" },
         skip,
         take: limit,
       }),
-      prisma.product.count({ where }),
+      (prisma as any).product.count({ where }),
     ]);
 
     return NextResponse.json({

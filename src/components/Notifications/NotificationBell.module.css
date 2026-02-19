@@ -1,0 +1,239 @@
+.container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bellButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  color: var(--text-light);
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bellButton:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--primary);
+}
+
+.badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--card-bg);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: -80px;
+  width: 320px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 1001;
+  overflow: hidden;
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.header {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subscribeBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.subscribeBtn:hover:not(:disabled) {
+  background: var(--secondary);
+  transform: translateY(-1px);
+}
+
+.subscribeBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.markAllBtn {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  color: var(--text-light);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.markAllBtn:hover {
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+}
+
+.list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.emptyState {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--text-light);
+}
+
+.emptyIcon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.notificationItem {
+  padding: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+}
+
+.notificationItem:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.unreadItem {
+  background: rgba(var(--primary-rgb), 0.03);
+}
+
+.unreadDot {
+  position: absolute;
+  top: 1.2rem;
+  right: 1rem;
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+}
+
+.iconWrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+}
+
+.itemTitle {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+  color: var(--text);
+}
+
+.itemMessage {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.itemTime {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  margin-top: 0.4rem;
+  display: block;
+  opacity: 0.7;
+}
+
+.footer {
+  padding: 0.75rem;
+  text-align: center;
+  background: var(--background);
+  border-top: 1px solid var(--border);
+}
+
+.viewAll {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-decoration: none;
+}
+
+.viewAll:hover {
+  color: var(--primary);
+}
+
+@media (max-width: 480px) {
+  .dropdown {
+    position: fixed;
+    top: 80px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+  }
+}

@@ -71,6 +71,7 @@ async function main() {
           create: {
             discountPercentage: 15,
             description: "Oferta Especial",
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
           }
         },
         history: {
@@ -99,6 +100,7 @@ async function main() {
           create: {
             discountPercentage: discount,
             description: `Promoção Incrível de ${discount}%`,
+            expiresAt: new Date(Date.now() + Math.random() * 30 * 24 * 60 * 60 * 1000), // Randomly up to 30 days
           }
         },
         history: {
@@ -109,6 +111,27 @@ async function main() {
       }
     });
   }
+
+  console.log("Seeding default users...");
+  const bcrypt = require("bcryptjs");
+  const hashedPassword = await bcrypt.hash("123456", 10);
+
+  await prisma.user.createMany({
+    data: [
+      {
+        name: "Admin",
+        email: "admin@barganito.com",
+        password: hashedPassword,
+        role: "admin",
+      },
+      {
+        name: "Teste",
+        email: "teste@teste.com",
+        password: hashedPassword,
+        role: "user",
+      },
+    ],
+  });
 
   console.log("Seed finished successfully!");
 }

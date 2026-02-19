@@ -9,8 +9,9 @@ export async function GET(req: Request) {
   }
 
   try {
-    const configs = await prisma.notificationConfig.findMany({
+    const configs = await (prisma as any).notificationConfig.findMany({
       where: { userId: session.user.id },
+      include: { category: true }
     });
     return NextResponse.json(configs);
   } catch (error) {
@@ -25,20 +26,32 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { category, productNamePattern, targetPrice, targetDiscount } = await req.json();
+    const { categoryId, productNamePattern, targetPrice, targetDiscount } = await req.json();
+    
+    // Safety check: Ensure the user actually exists in the DB (stale session prevention)
+    const userExists = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    });
 
-    const config = await prisma.notificationConfig.create({
+    if (!userExists) {
+      console.error('CRITICAL: Session userId not found in database:', session.user.id);
+      return NextResponse.json({ error: "Sessão expirada ou usuário não encontrado. Por favor, saia e entre novamente." }, { status: 401 });
+    }
+
+    const config = await (prisma as any).notificationConfig.create({
       data: {
         userId: session.user.id,
-        category,
-        productNamePattern,
+        categoryId: categoryId || null,
+        productNamePattern: productNamePattern || null,
         targetPrice: targetPrice ? parseFloat(targetPrice) : null,
         targetDiscount: targetDiscount ? parseFloat(targetDiscount) : null,
       },
+      include: { category: true }
     });
 
     return NextResponse.json(config, { status: 201 });
   } catch (error) {
+    console.error('Create error:', error);
     return NextResponse.json({ error: "Failed to create config" }, { status: 500 });
   }
 }

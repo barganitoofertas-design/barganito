@@ -24,9 +24,11 @@ export default async function Home({
   const params = await searchParams;
   const { data: products, pagination } = await getProducts(params);
 
-  const categoryName = params.category 
-    ? String(params.category).charAt(0).toUpperCase() + String(params.category).slice(1)
-    : params.recent === 'true' ? 'Produtos Recentes' : 'Todos os Produtos';
+  const categoryName = params.search
+    ? `Resultados para: ${params.search}`
+    : params.category 
+      ? String(params.category).charAt(0).toUpperCase() + String(params.category).slice(1)
+      : params.recent === 'true' ? 'Produtos Recentes' : 'Todos os Produtos';
 
   return (
     <>

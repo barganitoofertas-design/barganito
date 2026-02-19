@@ -1,5 +1,6 @@
 import styles from './ProductCard.module.css';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface ProductCardProps {
   product: any;
@@ -41,9 +42,19 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className={styles.footer}>
-          <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-            Ir para Oferta
-          </button>
+          {hasPromo ? (
+            <Link 
+              href={`/oferta/${promotion.id}`} 
+              className="btn btn-primary" 
+              style={{ width: '100%', justifyContent: 'center', textAlign: 'center' }}
+            >
+              Ir para Oferta
+            </Link>
+          ) : (
+            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+              Ir para Oferta
+            </button>
+          )}
         </div>
       </div>
     </div>
