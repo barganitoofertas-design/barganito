@@ -1,5 +1,6 @@
 "use client";
 
+import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -68,6 +69,19 @@ export default function RegisterPage() {
             Cadastrar
           </button>
         </form>
+        
+        <div style={{ margin: '1.5rem 0', textAlign: 'center', position: 'relative' }}>
+          <span style={{ background: 'var(--card-bg)', padding: '0 0.5rem', position: 'relative', zIndex: 1 }}>ou</span>
+          <hr style={{ position: 'absolute', top: '50%', width: '100%', border: '0', borderTop: '1px solid var(--border)' }} />
+        </div>
+
+        <button 
+          onClick={() => signIn("google", { callbackUrl: "/" })} 
+          className="btn" 
+          style={{ width: '100%', justifyContent: 'center', border: '1px solid var(--border)', background: 'white' }}
+        >
+          Entrar com Google
+        </button>
 
         <p style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
           Já tem conta? <Link href="/auth/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>Entrar</Link>

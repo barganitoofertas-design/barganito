@@ -13,6 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID || "placeholder-id",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "placeholder-secret",
+      allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
       name: "Credentials",
@@ -45,4 +46,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        if (!user.email) return false;
+        
+        // The adapter handles linking if allowDangerousEmailAccountLinking is true
+        // But we can add extra logic here if needed.
+        return true;
+      }
+      return true;
+    },
+    ...authConfig.callbacks,
+  },
 });

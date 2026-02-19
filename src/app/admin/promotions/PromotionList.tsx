@@ -17,24 +17,38 @@ interface Promotion {
   product: {
     name: string;
   };
+  user?: {
+    name: string | null;
+    email: string | null;
+  } | null;
+  reportCount?: number;
 }
 
 interface PromotionListProps {
   onEdit?: (promotion: Promotion) => void;
+  categories?: any[];
 }
 
-export default function PromotionList({ onEdit }: PromotionListProps) {
+export default function PromotionList({ onEdit, categories }: PromotionListProps) {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(false);
   const pageSize = 10;
 
   const fetchPromotions = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getPromotions({ page, pageSize, query });
+      const data = await getPromotions({ 
+        page, 
+        pageSize, 
+        query, 
+        status, 
+        categoryId: selectedCategory 
+      });
       setPromotions(data.promotions as any);
       setTotal(data.total);
     } catch (error) {
@@ -42,7 +56,7 @@ export default function PromotionList({ onEdit }: PromotionListProps) {
     } finally {
       setLoading(false);
     }
-  }, [page, query]);
+  }, [page, query, status, selectedCategory]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -130,6 +144,49 @@ export default function PromotionList({ onEdit }: PromotionListProps) {
           >
             {loading ? '...' : '🔄 Atualizar'}
           </button>
+        </div>
+
+        <div className="filter-selects" style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+          <select 
+            value={status} 
+            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+            style={{ 
+              padding: '0.7rem 1rem', 
+              borderRadius: '12px', 
+              border: '1px solid var(--border)', 
+              background: 'white',
+              fontSize: '0.9rem',
+              outline: 'none',
+              cursor: 'pointer',
+              minWidth: '130px'
+            }}
+          >
+            <option value="all">Todos os Status</option>
+            <option value="active">Ativas</option>
+            <option value="inactive">Inativas</option>
+            <option value="suggested">Sugeridas</option>
+            <option value="reported">Denunciadas</option>
+          </select>
+
+          <select 
+            value={selectedCategory} 
+            onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
+            style={{ 
+              padding: '0.7rem 1rem', 
+              borderRadius: '12px', 
+              border: '1px solid var(--border)', 
+              background: 'white',
+              fontSize: '0.9rem',
+              outline: 'none',
+              cursor: 'pointer',
+              minWidth: '150px'
+            }}
+          >
+            <option value="">Todas as Categorias</option>
+            {categories?.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
         
         <div className="total-badge">
@@ -225,17 +282,47 @@ export default function PromotionList({ onEdit }: PromotionListProps) {
                   </td>
                   <td style={{ padding: '1rem', fontSize: '0.9rem', color: 'var(--text-light)' }}>{promo.description || '-'}</td>
                   <td style={{ padding: '1rem' }}>
-                    <span style={{ 
-                      padding: '4px 10px', 
-                      borderRadius: '20px', 
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold',
-                      background: promo.isActive ? '#d1fae5' : '#fee2e2',
-                      color: promo.isActive ? '#065f46' : '#991b1b',
-                      display: 'inline-block'
-                    }}>
-                      {promo.isActive ? 'ATIVA' : 'INATIVA'}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ 
+                        padding: '4px 10px', 
+                        borderRadius: '20px', 
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        background: !promo.isActive && !promo.expiresAt ? '#fef3c7' : (promo.isActive ? '#d1fae5' : '#fee2e2'),
+                        color: !promo.isActive && !promo.expiresAt ? '#92400e' : (promo.isActive ? '#065f46' : '#991b1b'),
+                        display: 'inline-block',
+                        textAlign: 'center'
+                      }}>
+                        {!promo.isActive && !promo.expiresAt ? 'SUGERIDA' : (promo.isActive ? 'ATIVA' : 'INATIVA')}
+                      </span>
+                      {promo.user && (
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-light)', opacity: 0.8 }}>
+                          Por: {promo.user.name || promo.user.email?.split('@')[0]}
+                        </span>
+                      )}
+                      {(promo.reportCount ?? 0) >= 2 && (
+                        <span style={{ 
+                          padding: '4px 8px', 
+                          borderRadius: '6px', 
+                          fontSize: '0.7rem', 
+                          fontWeight: '800', 
+                          background: '#fee2e2', 
+                          color: '#991b1b',
+                          marginTop: '4px',
+                          textAlign: 'center',
+                          border: '1px solid #fca5a5',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                          animation: 'pulse 2s infinite'
+                        }}>
+                          ⚠️ POSSÍVEL GOLPE ({promo.reportCount})
+                        </span>
+                      )}
+                      {(promo.reportCount ?? 0) === 1 && (
+                        <span style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: 'bold' }}>
+                          🚩 1 denúncia recebida
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-light)' }}>
                     {formatDateTime(promo.startsAt)}

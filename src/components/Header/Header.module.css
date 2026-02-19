@@ -153,6 +153,21 @@
   font-weight: 800;
   font-size: 1.1rem;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.headerAvatarImage {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
 }
 
 .headerInfo {

@@ -10,6 +10,7 @@ interface UserMenuProps {
     name?: string | null;
     email?: string | null;
     role?: string | null;
+    image?: string | null;
   };
 }
 
@@ -46,14 +47,22 @@ export default function UserMenu({ user }: UserMenuProps) {
         aria-expanded={isOpen}
         title={user.name || 'Conta'}
       >
-        <span className={styles.avatarText}>{getInitials(user.name)}</span>
+        {user.image ? (
+          <img src={user.image} alt="" className={styles.avatarImage} />
+        ) : (
+          <span className={styles.avatarText}>{getInitials(user.name)}</span>
+        )}
         <div className={`${styles.statusDot} ${isOpen ? styles.activeDot : ''}`} />
       </button>
 
       {isOpen && (
         <div className={styles.premiumDropdown}>
           <div className={styles.dropdownHeader}>
-            <div className={styles.headerAvatar}>{getInitials(user.name)}</div>
+            {user.image ? (
+              <img src={user.image} alt="" className={styles.headerAvatarImage} />
+            ) : (
+              <div className={styles.headerAvatar}>{getInitials(user.name)}</div>
+            )}
             <div className={styles.headerInfo}>
               <p className={styles.headerName}>{user.name || 'Usuário'}</p>
               <p className={styles.headerEmail}>{user.email}</p>
@@ -69,6 +78,11 @@ export default function UserMenu({ user }: UserMenuProps) {
             <Link href="/settings" className={styles.menuLink} onClick={() => setIsOpen(false)}>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
               <span>Meus Alertas</span>
+            </Link>
+
+            <Link href="/promocoes/enviar" className={styles.menuLink} style={{ color: 'var(--primary)' }} onClick={() => setIsOpen(false)}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14m-7-7h14"/></svg>
+              <span>Sugerir Promoção</span>
             </Link>
 
             {user.role === 'admin' && (

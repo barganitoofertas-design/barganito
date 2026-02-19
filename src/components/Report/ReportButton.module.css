@@ -1,0 +1,45 @@
+.reportSection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
+.reportButton {
+  background: #fff1f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.reportButton:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fecaca;
+  transform: translateY(-1px);
+}
+
+.reportButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reportButton.active {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+.statusMessage {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #ef4444;
+  text-align: center;
+}

@@ -1,6 +1,7 @@
 import styles from './ProductCard.module.css';
 import Image from 'next/image';
 import Link from 'next/link';
+import Thermometer from '../Thermometer/Thermometer';
 
 interface ProductCardProps {
   product: any;
@@ -9,6 +10,7 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const promotion = product.promotions?.[0];
   const hasPromo = !!promotion;
+  const rating = product.rating || { level: 'OK', average: 2.0, count: 0 };
 
   return (
     <div className={`card ${styles.card}`}>
@@ -27,7 +29,10 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <div className={styles.content}>
-        <span className={styles.category}>{product.category?.name}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+          <span className={styles.category}>{product.category?.name}</span>
+          <Thermometer level={rating.level} showText={false} />
+        </div>
         <h3 className={styles.title}>{product.name}</h3>
         
         <div className={styles.priceContainer}>

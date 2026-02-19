@@ -50,6 +50,14 @@ export default function Sidebar() {
             Recentes
           </Link>
         </li>
+        <li>
+          <Link 
+            href="/?category=best" 
+            className={`${styles.categoryLink} ${currentCategory === 'best' ? styles.active : ''}`}
+          >
+            💎 Melhores
+          </Link>
+        </li>
         {categories.map((cat) => (
           <li key={cat.id}>
             <Link 

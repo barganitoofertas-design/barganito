@@ -11,6 +11,22 @@ async function getProducts(searchParams: { [key: string]: string | string[] | un
   const skip = (page - 1) * limit;
 
   const now = new Date();
+
+  // Lazy Update: Inativar promoções que já expiraram no banco
+  try {
+    await prisma.promotion.updateMany({
+      where: {
+        isActive: true,
+        expiresAt: { lt: new Date() }
+      },
+      data: {
+        isActive: false
+      }
+    });
+  } catch (error) {
+    console.error('Failed to auto-expire promotions on home:', error);
+  }
+
   const where: any = {
     promotions: {
       some: {
@@ -21,7 +37,7 @@ async function getProducts(searchParams: { [key: string]: string | string[] | un
     }
   };
 
-  if (category && category !== 'all') {
+  if (category && category !== 'all' && category !== 'best') {
     where.category = { slug: category };
   }
 
@@ -33,30 +49,144 @@ async function getProducts(searchParams: { [key: string]: string | string[] | un
   }
 
   try {
-    const [products, total] = await Promise.all([
-      (prisma as any).product.findMany({
-        where,
-        include: {
-          category: true,
-          promotions: {
-            where: {
-              isActive: true,
-              startsAt: { lte: now },
-              expiresAt: { gte: now }
+    let products: any[], total: number;
+
+    if (category === 'best') {
+      const productsRaw = await prisma.$queryRawUnsafe<any[]>(`
+        SELECT p.*, c.name as "categoryName", c.slug as "categorySlug",
+               promo.id as "promoId", promo."discountPercentage", promo."description" as "promoDescription",
+               sub.avg_rating, sub.vote_count
+        FROM "Product" p
+        JOIN "Category" c ON p."categoryId" = c.id
+        JOIN "Promotion" promo ON p.id = promo."productId"
+        JOIN (
+            SELECT "promotionId", AVG(value)::float as avg_rating, COUNT(*)::int as vote_count
+            FROM "Vote"
+            GROUP BY "promotionId"
+            HAVING AVG(value) >= 3.5
+        ) sub ON promo.id = sub."promotionId"
+        WHERE promo."isActive" = true 
+          AND (promo."startsAt" IS NULL OR promo."startsAt" <= $1)
+          AND (promo."expiresAt" IS NULL OR promo."expiresAt" >= $1)
+        ORDER BY 
+          CASE WHEN sub.avg_rating >= 4.5 THEN 2 ELSE 1 END DESC,
+          sub.vote_count DESC
+        OFFSET $2 LIMIT $3
+      `, now, skip, limit);
+
+      const totalResult = await prisma.$queryRawUnsafe<{ count: number }[]>(`
+        SELECT COUNT(*)::int as count
+        FROM "Promotion" promo
+        JOIN (
+            SELECT "promotionId"
+            FROM "Vote"
+            GROUP BY "promotionId"
+            HAVING AVG(value) >= 3.5
+        ) sub ON promo.id = sub."promotionId"
+        WHERE promo."isActive" = true
+          AND (promo."startsAt" IS NULL OR promo."startsAt" <= $1)
+          AND (promo."expiresAt" IS NULL OR promo."expiresAt" >= $1)
+      `, now);
+
+      total = totalResult[0]?.count || 0;
+      
+      products = productsRaw.map(r => ({
+        id: r.id,
+        name: r.name,
+        currentPrice: r.currentPrice,
+        imageUrl: r.imageUrl,
+        category: { name: r.categoryName, slug: r.categorySlug },
+        promotions: [{
+          id: r.promoId,
+          discountPercentage: r.discountPercentage,
+          description: r.promoDescription
+        }],
+        rating: {
+          average: r.avg_rating,
+          count: r.vote_count,
+          level: r.avg_rating >= 4.5 ? 'TOP' : 'Muito Bom'
+        }
+      }));
+    } else {
+      const [productsData, totalData] = await Promise.all([
+        (prisma as any).product.findMany({
+          where,
+          include: {
+            category: true,
+            promotions: {
+              where: {
+                isActive: true,
+                startsAt: { lte: now },
+                expiresAt: { gte: now }
+              },
+              orderBy: { createdAt: "desc" },
+              take: 1,
             },
-            orderBy: { createdAt: "desc" },
-            take: 1,
           },
-        },
-        orderBy: { updatedAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      (prisma as any).product.count({ where }),
-    ]);
+          orderBy: { updatedAt: "desc" },
+          skip,
+          take: limit,
+        }),
+        (prisma as any).product.count({ where }),
+      ]);
+      products = productsData;
+      total = totalData;
+    }
+
+    // Fetch ratings using raw SQL since Prisma Client is out of sync
+    // Skip if we already have it from the 'best' category custom query
+    let ratingsMap: Record<string, { average: number, count: number }> = {};
+
+    if (category !== 'best') {
+      const promoIds = products
+        .map((p: any) => p.promotions[0]?.id)
+        .filter(Boolean);
+
+      if (promoIds.length > 0) {
+        try {
+          const ratings = await prisma.$queryRawUnsafe<any[]>(
+            `SELECT "promotionId", AVG("value")::float as avg, COUNT(*)::int as count 
+             FROM "Vote" 
+             WHERE "promotionId" IN (${promoIds.map((_: string, i: number) => `$${i + 1}`).join(',')})
+             GROUP BY "promotionId"`,
+            ...promoIds
+          );
+          
+          ratings.forEach(r => {
+            ratingsMap[r.promotionId] = { average: r.avg, count: r.count };
+          });
+        } catch (e) {
+          console.error('Failed to fetch ratings:', e);
+        }
+      }
+    }
+
+    const productsWithRatings = products.map((product: any) => {
+      const promo = product.promotions[0];
+      if (!promo) return product;
+
+      // Use pre-calculated rating if available (for 'best' category)
+      if (product.rating) return product;
+
+      const stats = ratingsMap[promo.id] || { average: 2.0, count: 0 };
+      const average = stats.average;
+
+      let level = 'OK';
+      if (average >= 4.5) level = 'TOP';
+      else if (average >= 3.5) level = 'Muito Bom';
+      else if (average >= 2.5) level = 'Bom';
+      else if (average >= 1.5) level = 'OK';
+      else if (average >= 0.5) level = 'Nheee';
+      else level = 'Ruim';
+
+      return {
+        ...product,
+        rating: { average, count: stats.count, level }
+      };
+    });
 
     return {
-      data: products,
+      data: productsWithRatings,
       pagination: {
         total,
         page,

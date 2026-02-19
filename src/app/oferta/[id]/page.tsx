@@ -4,6 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar/Sidebar";
 import styles from "./OfferDetail.module.css";
+import ShareButtons from "@/components/Share/ShareButtons";
+import CommentSection from "@/components/Comments/CommentSection";
+import Thermometer from "@/components/Thermometer/Thermometer";
+import VoteControl from "@/components/Thermometer/VoteControl";
+import ReportButton from "@/components/Report/ReportButton";
+import { getPromotionRating, getUserVote } from "../vote-actions";
 
 interface OfferPageProps {
   params: Promise<{ id: string }>;
@@ -30,6 +36,9 @@ export default async function OfferPage({ params }: OfferPageProps) {
   const { product } = promotion;
   const originalPrice = product.currentPrice / (1 - (promotion.discountPercentage || 0) / 100);
 
+  const rating = await getPromotionRating(id);
+  const userVote = await getUserVote(id);
+
   return (
     <>
       <Sidebar />
@@ -53,7 +62,10 @@ export default async function OfferPage({ params }: OfferPageProps) {
           {/* Coluna do Conteúdo */}
           <div className={styles.contentSection}>
             <div className={styles.headerInfo}>
-              <span className={styles.categoryBadge}>{product.category?.name}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <span className={styles.categoryBadge}>{product.category?.name}</span>
+                <Thermometer level={rating.level} />
+              </div>
               <h1 className={styles.productTitle}>{product.name}</h1>
             </div>
 
@@ -75,6 +87,13 @@ export default async function OfferPage({ params }: OfferPageProps) {
                 </div>
               )}
 
+              <ShareButtons 
+                url={`https://barganito.com.br/oferta/${id}`} 
+                title={product.name} 
+              />
+
+              <ReportButton promotionId={id} />
+
               <a 
                 href={product.url} 
                 target="_blank" 
@@ -87,8 +106,16 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
             <div className={styles.descriptionSection}>
               <h3>Sobre este produto</h3>
-              <p>{product.description || "Nenhuma descrição disponível para este produto."}</p>
+              <p>{product.description || "Nenhuma descrição detalhada disponível."}</p>
             </div>
+
+            <VoteControl 
+              promotionId={id} 
+              initialVote={userVote} 
+              count={rating.count} 
+            />
+
+            <CommentSection promotionId={id} />
           </div>
         </div>
       </div>

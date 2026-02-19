@@ -76,7 +76,7 @@ export default function PromotionManager({ categories }: PromotionManagerProps) 
       <div style={{ marginTop: '3rem' }}>
         <h2 style={{ marginBottom: '1rem' }}>Promoções Ativas e Histórico</h2>
         <p style={{ color: 'var(--text-light)', marginBottom: '1.5rem' }}>Gerencie as promoções cadastradas, filtre por produto e acompanhe status.</p>
-        <PromotionList key={refreshKey} onEdit={handleEdit} />
+        <PromotionList key={refreshKey} onEdit={handleEdit} categories={categories} />
       </div>
     </div>
   );

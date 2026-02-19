@@ -24,19 +24,23 @@ interface NotificationPayload {
 export async function sendNotification(payload: NotificationPayload) {
   const { userId, title, message, link, type = 'alert' } = payload;
 
-  // 1. Get user preferences and push subscriptions using raw SQL
-  // This avoids issues with the stale Prisma Client include
-  const [userResult, configResult, pushResult] = await Promise.all([
-    prisma.$queryRawUnsafe<any[]>(`SELECT "id", "email" FROM "User" WHERE "id" = $1`, userId),
-    prisma.$queryRawUnsafe<any[]>(`SELECT * FROM "NotificationConfig" WHERE "userId" = $1 LIMIT 1`, userId),
-    prisma.$queryRawUnsafe<any[]>(`SELECT * FROM "PushSubscription" WHERE "userId" = $1`, userId)
+  // 1. Get user preferences and push subscriptions
+  const [user, config, pushSubscriptions] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true }
+    }),
+    prisma.notificationConfig.findFirst({
+      where: { userId }
+    }),
+    prisma.pushSubscription.findMany({
+      where: { userId }
+    })
   ]);
 
-  const user = userResult[0];
   if (!user) return;
 
-  const config = configResult[0] || { notifyInternal: true, notifyEmail: true, notifyPush: true };
-  const pushSubscriptions = pushResult || [];
+  const userConfig = config || { notifyInternal: true, notifyEmail: true, notifyPush: true };
 
   const results = {
     internal: false,
@@ -45,29 +49,25 @@ export async function sendNotification(payload: NotificationPayload) {
   };
 
   // 2. Internal Notification
-  if (config.notifyInternal) {
+  if (userConfig.notifyInternal) {
     try {
-      // Workaround: Use raw SQL because the Prisma Client is out of sync
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "Notification" ("id", "userId", "title", "message", "link", "type", "isRead", "createdAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        `ntf_${Math.random().toString(36).substr(2, 9)}`, // ID field is mandatory in SQL
-        userId,
-        title,
-        message,
-        link || null,
-        type,
-        false,
-        new Date()
-      );
+      await prisma.notification.create({
+        data: {
+          userId,
+          title,
+          message,
+          link: link || null,
+          type,
+        }
+      });
       results.internal = true;
     } catch (error) {
-      console.error('Error creating internal notification via raw SQL:', error);
+      console.error('Error creating internal notification:', error);
     }
   }
 
   // 3. Email Notification
-  if (config.notifyEmail && user.email && resend) {
+  if (userConfig.notifyEmail && user.email && resend) {
     try {
       await resend.emails.send({
         from: 'Barganito <alertas@barganito.com.br>',
@@ -90,7 +90,7 @@ export async function sendNotification(payload: NotificationPayload) {
   }
 
   // 4. Web Push Notification
-  if (config.notifyPush && pushSubscriptions.length > 0) {
+  if (userConfig.notifyPush && pushSubscriptions.length > 0) {
     const pushPayload = JSON.stringify({
       title,
       body: message,
@@ -111,10 +111,9 @@ export async function sendNotification(payload: NotificationPayload) {
         console.error('Push notification failed for endpoint:', sub.endpoint, error);
         // Delete invalid subscription
         if (error.statusCode === 410 || error.statusCode === 404) {
-          return prisma.$executeRawUnsafe(
-            `DELETE FROM "PushSubscription" WHERE "endpoint" = $1`,
-            sub.endpoint
-          ).catch(() => {});
+          return prisma.pushSubscription.delete({
+            where: { endpoint: sub.endpoint }
+          }).catch(() => {});
         }
       })
     );

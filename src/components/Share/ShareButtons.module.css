@@ -1,0 +1,92 @@
+.shareContainer {
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.shareLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.shareButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  color: white;
+  text-decoration: none;
+  transition: transform 0.2s, filter 0.2s;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.shareButton:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.whatsapp {
+  background: #25D366;
+}
+
+.telegram {
+  background: #0088cc;
+}
+
+.twitter {
+  background: #000000;
+}
+
+.facebook {
+  background: #1877F2;
+}
+
+.linkedin {
+  background: #0A66C2;
+}
+
+.copy {
+  background: var(--background);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.shareButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.copiedTooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--background);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, 5px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}

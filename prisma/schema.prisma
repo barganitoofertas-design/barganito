@@ -48,6 +48,10 @@ model User {
   configs       NotificationConfig[]
   notifications Notification[]
   pushSubscriptions PushSubscription[]
+  promotions    Promotion[]
+  comments      Comment[]
+  votes         Vote[]
+  reports       Report[]
 }
 
 model VerificationToken {
@@ -93,12 +97,52 @@ model Promotion {
   product            Product  @relation(fields: [productId], references: [id])
   productId          String
   discountPercentage Float?
-  expiresAt          DateTime
+  expiresAt          DateTime?
   isActive           Boolean  @default(true)
   description        String?
-  startsAt           DateTime @default(now())
+  startsAt           DateTime? @default(now())
   updatedAt          DateTime @default(now()) @updatedAt
   createdAt          DateTime @default(now())
+  userId             String?
+  user               User?    @relation(fields: [userId], references: [id])
+  comments           Comment[]
+  votes              Vote[]
+  reports            Report[]
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  text        String
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Vote {
+  id          String    @id @default(cuid())
+  value       Int       // 0 to 5
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, promotionId])
+}
+
+model Report {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, promotionId])
 }
 
 model NotificationConfig {

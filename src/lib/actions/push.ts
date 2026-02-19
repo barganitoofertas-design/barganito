@@ -8,19 +8,20 @@ export async function savePushSubscription(subscription: { endpoint: string; key
   if (!session?.user?.id) return { success: false, error: 'Não autorizado' };
 
   try {
-    // We use a workaround with raw SQL because PushSubscription model might be out of sync in Prisma Client
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "PushSubscription" ("id", "userId", "endpoint", "p256dh", "auth", "createdAt")
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT ("endpoint") 
-       DO UPDATE SET "userId" = $2, "p256dh" = $4, "auth" = $5`,
-      `sub_${Math.random().toString(36).substr(2, 9)}`,
-      session.user.id,
-      subscription.endpoint,
-      subscription.keys.p256dh,
-      subscription.keys.auth,
-      new Date()
-    );
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: subscription.endpoint },
+      update: {
+        userId: session.user.id,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      },
+      create: {
+        userId: session.user.id,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      },
+    });
 
     return { success: true };
   } catch (error) {

@@ -5,33 +5,117 @@ import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { parseBRInputToUTC } from '@/lib/utils';
 
-export async function getPromotions(params: { page?: number, pageSize?: number, query?: string } = {}) {
-  const { page = 1, pageSize = 10, query = '' } = params;
+export async function getPromotions(params: { 
+  page?: number, 
+  pageSize?: number, 
+  query?: string,
+  status?: string,
+  categoryId?: string
+} = {}) {
+  const { page = 1, pageSize = 10, query = '', status = 'all', categoryId = '' } = params;
   const skip = (page - 1) * pageSize;
 
-  const where: any = {};
+  // Lazy Update: Inativar promoções que já expiraram
+  try {
+    await prisma.promotion.updateMany({
+      where: {
+        isActive: true,
+        expiresAt: { lt: new Date() }
+      },
+      data: {
+        isActive: false
+      }
+    });
+  } catch (error) {
+    console.error('Failed to auto-expire promotions:', error);
+  }
+
+  const where: any = {
+    AND: []
+  };
+
   if (query) {
-    where.OR = [
-      { product: { name: { contains: query, mode: 'insensitive' } } },
-      { description: { contains: query, mode: 'insensitive' } },
-    ];
+    where.AND.push({
+      OR: [
+        { product: { name: { contains: query, mode: 'insensitive' } } },
+        { description: { contains: query, mode: 'insensitive' } }
+      ]
+    });
+  }
+
+  if (categoryId) {
+    where.AND.push({ product: { categoryId: categoryId } });
+  }
+
+  if (status === 'active') {
+    where.AND.push({ isActive: true });
+  } else if (status === 'inactive') {
+    where.AND.push({ isActive: false, expiresAt: { not: null } });
+  } else if (status === 'suggested') {
+    where.AND.push({ isActive: false, expiresAt: null });
+  } else if (status === 'reported') {
+    // Usar consulta bruta para pegar IDs de promoções com denúncias
+    // contornando o erro de relação inexistente no Prisma Client desatualizado
+    try {
+      const reported = await prisma.$queryRawUnsafe<{ promotionId: string }[]>(
+        `SELECT DISTINCT "promotionId" FROM "Report"`
+      );
+      const reportIds = reported.map(r => r.promotionId);
+      
+      if (reportIds.length > 0) {
+        where.AND.push({ id: { in: reportIds } });
+      } else {
+        // Se não há denúncias, força o resultado a ser vazio
+        where.AND.push({ id: 'none' }); 
+      }
+    } catch (e) {
+      console.error('Failed to fetch reported IDs:', e);
+      where.AND.push({ id: 'error' });
+    }
   }
 
   const [total, promotions] = await Promise.all([
-    (prisma as any).promotion.count({ where }),
-    (prisma as any).promotion.findMany({
+    prisma.promotion.count({ where }),
+    prisma.promotion.findMany({
       where,
       include: {
         product: true,
-      },
-      orderBy: { createdAt: 'desc' },
+        user: true,
+      } as any,
+      orderBy: { startsAt: 'desc' },
       skip,
       take: pageSize,
     }),
   ]);
 
+  // Fetch report counts using raw SQL
+  const promoIds = promotions.map((p: any) => p.id);
+  let reportsMap: Record<string, number> = {};
+
+  if (promoIds.length > 0) {
+    try {
+      const reports = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT "promotionId", COUNT(*)::int as count 
+         FROM "Report" 
+         WHERE "promotionId" IN (${promoIds.map((_: string, i: number) => `$${i + 1}`).join(',')})
+         GROUP BY "promotionId"`,
+        ...promoIds
+      );
+      reports.forEach(r => {
+        reportsMap[r.promotionId] = r.count;
+      });
+    } catch (e) {
+      console.error('Failed to fetch report counts for admin:', e);
+    }
+  }
+
+  const promotionsWithReports = promotions.map((p: any) => ({
+    ...p,
+    reportCount: reportsMap[p.id] || 0
+  }));
+
   return {
-    promotions,
+    promotions: promotionsWithReports,
     total,
     totalPages: Math.ceil(total / pageSize),
     currentPage: page,
@@ -101,20 +185,16 @@ export async function createPromotion(formData: FormData) {
 
     const id = `cl${Math.random().toString(36).substring(2, 11)}${Date.now().toString(36)}`;
     
-    // Workaround: Use raw SQL because the Prisma Client is out of sync and won't accept 'startsAt'
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "Promotion" ("id", "productId", "discountPercentage", "description", "startsAt", "expiresAt", "isActive", "updatedAt", "createdAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      id,
-      productId,
-      discountPercentage,
-      description,
-      startsAt,
-      expiresAt,
-      isActive,
-      new Date(), // updatedAt in BR time
-      new Date()  // createdAt in BR time
-    );
+    await prisma.promotion.create({
+      data: {
+        productId,
+        discountPercentage,
+        description,
+        startsAt,
+        expiresAt,
+        isActive,
+      }
+    });
 
     revalidatePath('/admin/promotions');
     revalidatePath('/');
@@ -192,21 +272,17 @@ export async function updatePromotion(id: string, formData: FormData) {
     }
 
     // 2. Update Promotion
-    // Workaround: Use raw SQL because the Prisma Client is out of sync and won't accept 'startsAt'
-    await prisma.$executeRawUnsafe(
-      `UPDATE "Promotion" 
-       SET "productId" = $1, "discountPercentage" = $2, "description" = $3, 
-           "startsAt" = $4, "expiresAt" = $5, "isActive" = $6, "updatedAt" = $7 
-       WHERE "id" = $8`,
-      productId, 
-      discountPercentage, 
-      description, 
-      startsAt, 
-      expiresAt, 
-      isActive, 
-      new Date(), // updatedAt in BR time
-      id
-    );
+    await prisma.promotion.update({
+      where: { id },
+      data: {
+        productId,
+        discountPercentage,
+        description,
+        startsAt,
+        expiresAt,
+        isActive,
+      }
+    });
 
     revalidatePath('/admin/promotions');
     revalidatePath('/');
@@ -380,10 +456,9 @@ export async function deletePromotion(id: string) {
   }
 
   try {
-    await prisma.$executeRawUnsafe(
-      'DELETE FROM "Promotion" WHERE "id" = $1',
-      id
-    );
+    await prisma.promotion.delete({
+      where: { id }
+    });
 
     revalidatePath('/admin/promotions');
     revalidatePath('/');

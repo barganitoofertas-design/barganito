@@ -16,11 +16,9 @@ export async function GET(request: Request) {
     const now = new Date();
 
     // BATCH: 1 query - Get all active alerts
-    const alerts = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT nc.*, c.name as "categoryName" 
-       FROM "NotificationConfig" nc
-       LEFT JOIN "Category" c ON nc."categoryId" = c.id`
-    );
+    const alerts = await prisma.notificationConfig.findMany({
+      include: { category: true }
+    }) as any[];
 
     if (alerts.length === 0) {
       return NextResponse.json({ success: true, results: { checked: 0, triggered: 0, errors: 0 } });
@@ -43,13 +41,13 @@ export async function GET(request: Request) {
     const userIds = [...new Set(alerts.map((a: any) => a.userId))];
     const promoLinks = activePromotions.map((p: any) => `/oferta/${p.id}`);
 
-    const existingNotifications = await prisma.$queryRawUnsafe<{ userId: string; link: string }[]>(
-      `SELECT "userId", "link" FROM "Notification" 
-       WHERE "userId" = ANY($1::text[]) 
-       AND "link" = ANY($2::text[])`,
-      userIds,
-      promoLinks
-    );
+    const existingNotifications = await prisma.notification.findMany({
+      where: {
+        userId: { in: userIds },
+        link: { in: promoLinks }
+      },
+      select: { userId: true, link: true }
+    });
 
     // Build a lookup Set for O(1) dedup checks: "userId|link"
     const sentSet = new Set(existingNotifications.map(n => `${n.userId}|${n.link}`));
@@ -105,11 +103,10 @@ export async function GET(request: Request) {
 
       // Update lastAlertSentAt only if there were matches
       if (matches.length > 0) {
-        await prisma.$executeRawUnsafe(
-          `UPDATE "NotificationConfig" SET "lastAlertSentAt" = $1 WHERE "id" = $2`,
-          now,
-          alertId
-        );
+        await prisma.notificationConfig.update({
+          where: { id: alertId },
+          data: { lastAlertSentAt: now }
+        });
       }
     }
 

@@ -10,6 +10,7 @@ export const authConfig = {
       if (token?.sub && session.user) {
         (session.user as any).id = token.sub;
         (session.user as any).role = token.role;
+        (session.user as any).image = token.picture;
       }
       return session;
     },
@@ -17,6 +18,7 @@ export const authConfig = {
       if (user) {
         token.sub = user.id;
         token.role = (user as any).role;
+        token.picture = (user as any).image;
       }
       return token;
     },
