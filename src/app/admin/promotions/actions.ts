@@ -73,18 +73,72 @@ export async function getPromotions(params: {
       }
     }
 
-    const [total, promotions] = await Promise.all([
-      prisma.promotion.count({ where }),
-      prisma.promotion.findMany({
-        where,
-        include: {
-          product: true,
-        } as any,
-        orderBy: { startsAt: 'desc' },
-        skip,
-        take: pageSize,
-      }),
+    // Build dynamic parameters to avoid index/type mismatch
+    const countParams: any[] = [];
+    let countWhereExtra = '';
+    
+    if (query) {
+      countParams.push(`%${query}%`);
+      countWhereExtra += ` AND (p."name" ILIKE $${countParams.length}::text OR promo."description" ILIKE $${countParams.length}::text)`;
+    }
+    
+    if (categoryId) {
+      countParams.push(categoryId);
+      countWhereExtra += ` AND p."categoryId" = $${countParams.length}::text`;
+    }
+
+    const fetchParams: any[] = [pageSize, skip];
+    let fetchWhereExtra = '';
+    
+    if (query) {
+      fetchParams.push(`%${query}%`);
+      fetchWhereExtra += ` AND (p."name" ILIKE $${fetchParams.length}::text OR promo."description" ILIKE $${fetchParams.length}::text)`;
+    }
+    
+    if (categoryId) {
+      fetchParams.push(categoryId);
+      fetchWhereExtra += ` AND p."categoryId" = $${fetchParams.length}::text`;
+    }
+
+    const [totalResult, promotionsRaw] = await Promise.all([
+      prisma.$queryRawUnsafe<{ count: number }[]>(
+        `SELECT COUNT(*)::int as count
+         FROM "Promotion" promo
+         JOIN "Product" p ON promo."productId" = p.id
+         WHERE 1=1 ${
+           status === 'active' ? 'AND promo."isActive" = true' : 
+           status === 'inactive' ? 'AND promo."isActive" = false AND promo."expiresAt" IS NOT NULL' :
+           status === 'suggested' ? 'AND promo."isActive" = false AND promo."expiresAt" IS NULL' :
+           status === 'reported' ? 'AND promo."id" IN (SELECT DISTINCT "promotionId" FROM "Report")' : ''
+         }
+         ${countWhereExtra}`,
+        ...countParams
+      ),
+      prisma.$queryRawUnsafe<any[]>(
+        `SELECT promo.*, 
+                p.name as "product_name", p.id as "product_id"
+         FROM "Promotion" promo
+         JOIN "Product" p ON promo."productId" = p.id
+         WHERE 1=1 ${
+           status === 'active' ? 'AND promo."isActive" = true' : 
+           status === 'inactive' ? 'AND promo."isActive" = false AND promo."expiresAt" IS NOT NULL' :
+           status === 'suggested' ? 'AND promo."isActive" = false AND promo."expiresAt" IS NULL' :
+           status === 'reported' ? 'AND promo."id" IN (SELECT DISTINCT "promotionId" FROM "Report")' : ''
+         }
+         ${fetchWhereExtra}
+         ORDER BY promo."startsAt" DESC
+         LIMIT $1::int OFFSET $2::int`,
+        ...fetchParams
+      ).then(res => res.filter(Boolean))
     ]);
+
+    const total = totalResult[0]?.count || 0;
+
+    // Format raw results to match Prisma structure
+    const promotions = promotionsRaw.map(r => ({
+      ...r,
+      product: { id: r.product_id, name: r.product_name }
+    }));
 
     // Fetch user details manually because the 'user' relation is broken in the client
     const userIds = [...new Set(promotions.map((p: any) => p.userId).filter(Boolean))];
