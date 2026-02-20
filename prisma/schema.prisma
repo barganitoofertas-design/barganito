@@ -52,6 +52,7 @@ model User {
   comments      Comment[]
   votes         Vote[]
   reports       Report[]
+  commentVotes  CommentVote[]
 }
 
 model VerificationToken {
@@ -119,6 +120,19 @@ model Comment {
   promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  votes       CommentVote[]
+}
+
+model CommentVote {
+  id        String   @id @default(cuid())
+  type      String   // 'like' or 'dislike'
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId])
 }
 
 model Vote {
