@@ -1,16 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import PromotionForm from './PromotionForm';
-import PromotionList from './PromotionList';
-import ProductForm from './ProductForm';
-import Modal from '@/components/Modal/Modal';
+import { useState, useRef } from "react";
+import PromotionForm from "./PromotionForm";
+import PromotionList from "./PromotionList";
+import ProductForm from "./ProductForm";
+import Modal from "@/components/Modal/Modal";
+import CommentManager from "./CommentManager";
 
 interface PromotionManagerProps {
   categories: any[];
 }
 
-export default function PromotionManager({ categories }: PromotionManagerProps) {
+export default function PromotionManager({
+  categories,
+}: PromotionManagerProps) {
   const [editingPromotion, setEditingPromotion] = useState<any | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -24,7 +27,7 @@ export default function PromotionManager({ categories }: PromotionManagerProps) 
 
   const handleSuccess = () => {
     setEditingPromotion(null);
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -35,9 +38,7 @@ export default function PromotionManager({ categories }: PromotionManagerProps) 
 
         {/* Formulário de Nova Promoção (Fixo) */}
         <div>
-          <PromotionForm 
-            onSuccess={() => setRefreshKey(prev => prev + 1)}
-          />
+          <PromotionForm onSuccess={() => setRefreshKey((prev) => prev + 1)} />
         </div>
       </div>
 
@@ -60,23 +61,34 @@ export default function PromotionManager({ categories }: PromotionManagerProps) 
       `}</style>
 
       {/* Modal de Edição */}
-      <Modal 
-        isOpen={!!editingPromotion} 
-        onClose={handleCancel} 
+      <Modal
+        isOpen={!!editingPromotion}
+        onClose={handleCancel}
         title="Editar Promoção"
       >
-        <PromotionForm 
-          initialData={editingPromotion} 
+        <PromotionForm
+          initialData={editingPromotion}
           categories={categories}
-          onCancel={handleCancel} 
+          onCancel={handleCancel}
           onSuccess={handleSuccess}
         />
       </Modal>
 
-      <div style={{ marginTop: '3rem' }}>
-        <h2 style={{ marginBottom: '1rem' }}>Promoções Ativas e Histórico</h2>
-        <p style={{ color: 'var(--text-light)', marginBottom: '1.5rem' }}>Gerencie as promoções cadastradas, filtre por produto e acompanhe status.</p>
-        <PromotionList key={refreshKey} onEdit={handleEdit} categories={categories} />
+      <div style={{ marginTop: "3rem" }}>
+        <h2 style={{ marginBottom: "1rem" }}>Promoções Ativas e Histórico</h2>
+        <p style={{ color: "var(--text-light)", marginBottom: "1.5rem" }}>
+          Gerencie as promoções cadastradas, filtre por produto e acompanhe
+          status.
+        </p>
+        <PromotionList
+          key={refreshKey}
+          onEdit={handleEdit}
+          categories={categories}
+        />
+      </div>
+
+      <div style={{ marginTop: "3rem" }}>
+        <CommentManager />
       </div>
     </div>
   );
