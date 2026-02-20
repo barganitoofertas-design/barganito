@@ -4,11 +4,32 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 
-// Simple profane words list (expand this as needed)
-const BANNED_WORDS = [
-  'ofensivo', 'burro', 'idiota', 'lixo', 'bosta', 'droga', // Exemplo
-  // Adicione mais palavras aqui ou use uma lib específica se o projeto crescer
+// Supplement with a robust custom list for BR-PT
+const CUSTOM_BAD_WORDS = [
+  // Básicos
+  'cu', 'cú', 'foda', 'porra', 'caralho', 'merda', 'puta', 'bosta', 'desgraça', 
+  'arrombado', 'babaca', 'pau', 'pinto', 'buceta', 'xereca', 'cacete', 
+  'vagabundo', 'piranha', 'chupa', 'fodasse', 'foda-se', 'foda se',
+  // Frases e Abreviações
+  'vai tomar no', 'vai tomar', 'vtc', 'fdp', 'vai se foder', 'vtnc', 'filho da puta',
+  'vtnc', 'tomar no cu', 'tomar no cú', 'toma no cu', 'toma no cú',
+  // Insultos e Outros
+  'viado', 'corno', 'safado', 'rapariga', 'canalha', 'imbecil', 'idiota',
+  'trouxa', 'f d p', 'v.t.n.c', 'v.t.c', 'p.o.r.r.a', 'carai', 'caray',
+  'putaria', 'putinho', 'putinha', 'vsf', 'v.s.f', 'tmnc', 't.m.n.c',
+  'pqp', 'p.q.p', 'estupro', 'bucetão', 'maldito', 'maldita', 'escória',
+  'desgraca', 'disgraca', 'pnc', 'p.n.c', 'fdpt', 'fuder', 'fude', 'fudendo',
+  'krai', 'krl', 'krlh', 'vão se foder', 'vao se foder', 'va se foder',
+  'xana', 'xereca', 'chupa', 'mamada', 'boquete', 'pnc', 'bucet'
 ];
+
+const normalizeText = (textVal: string) => {
+  return textVal.normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
+};
+
+const superNormalize = (textVal: string) => {
+  return normalizeText(textVal).replace(/[^a-z0-9]/g, "");
+};
 
 // Regex for link detection
 const LINK_REGEX = /(https?:\/\/|www\.)[^\s/$.?#].[^\s]*/gi;
@@ -42,8 +63,16 @@ export async function addComment(promotionId: string, text: string) {
   }
 
   // 4. Validation: Profanity
-  const lowerText = trimmedText.toLowerCase();
-  const hasProfanity = BANNED_WORDS.some(word => lowerText.includes(word));
+  const normalizedText = normalizeText(trimmedText);
+  const superNormalizedText = superNormalize(trimmedText);
+  
+  const hasProfanity = 
+    CUSTOM_BAD_WORDS.some(word => {
+      const normWord = normalizeText(word);
+      const superNormWord = superNormalize(word);
+      return normalizedText.includes(normWord) || superNormalizedText.includes(superNormWord);
+    });
+
   if (hasProfanity) {
     return { success: false, message: 'Seu comentário contém palavras não permitidas.' };
   }
@@ -96,3 +125,29 @@ export async function getComments(promotionId: string) {
     return [];
   }
 }
+
+export async function deleteComment(commentId: string) {
+  try {
+    // Fallback to Raw SQL because Prisma Client is not updating on this environment
+    const comments = await prisma.$queryRawUnsafe<any[]>(
+      `DELETE FROM "Comment" c
+       WHERE c."id" = $1`,
+      commentId
+    );
+
+    // Map the results to the expected format
+    return comments.map(c => ({
+      id: c.id,
+      text: c.text,
+      createdAt: c.createdAt,
+      user: {
+        name: c.userName,
+        image: c.userImage
+      }
+    }));
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    return [];
+  }
+}
+

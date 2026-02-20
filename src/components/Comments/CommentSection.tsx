@@ -29,7 +29,7 @@ export default async function CommentSection({ promotionId }: CommentSectionProp
         </div>
       )}
 
-      <CommentList comments={comments} />
+      <CommentList comments={comments} session={session} />
     </section>
   );
 }
