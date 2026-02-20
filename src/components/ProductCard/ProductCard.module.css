@@ -49,6 +49,17 @@
   transition: var(--transition);
 }
 
+.imageContainer a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.imageContainer a:hover img {
+  transform: scale(1.05);
+}
+
 .card:hover .imageContainer img {
   transform: scale(1.08); /* Slightly subtler zoom */
 }
@@ -116,8 +127,9 @@
 /* Specific button styling override for the card context if needed, 
    though global .btn class is used in TSX. We can target it here too. */
 .card button {
-  padding: 0.5rem 1rem !important; /* Force smaller padding */
-  font-size: 0.9rem !important;
+  padding: 0.4rem 0.8rem !important; /* Smaller padding */
+  font-size: 0.8rem !important; /* Smaller font */
+  height: auto !important; /* Remove fixed height if any */
 }
 
 @media (max-width: 480px) {
@@ -137,5 +149,24 @@
 
   .currentPrice {
     font-size: 1rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .card {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.1rem;
+  }
+
+  .currentPrice {
+    font-size: 1.2rem;
+  }
+
+  .card button {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9rem !important;
   }
 }

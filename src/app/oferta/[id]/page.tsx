@@ -34,7 +34,8 @@ export default async function OfferPage({ params }: OfferPageProps) {
   }
 
   const { product } = promotion;
-  const originalPrice = product.currentPrice / (1 - (promotion.discountPercentage || 0) / 100);
+  const originalPrice =
+    product.currentPrice / (1 - (promotion.discountPercentage || 0) / 100);
 
   const rating = await getPromotionRating(id);
   const userVote = await getUserVote(id);
@@ -62,42 +63,59 @@ export default async function OfferPage({ params }: OfferPageProps) {
           {/* Coluna do Conteúdo */}
           <div className={styles.contentSection}>
             <div className={styles.headerInfo}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <span className={styles.categoryBadge}>{product.category?.name}</span>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "1rem",
+                }}
+              >
+                <span className={styles.categoryBadge}>
+                  {product.category?.name}
+                </span>
                 <Thermometer level={rating.level} />
               </div>
               <h1 className={styles.productTitle}>{product.name}</h1>
             </div>
 
             <div className={styles.priceCard}>
-              <div className={styles.priceHeader}>
-                {promotion.discountPercentage && (
-                  <span className={styles.discountTag}>-{promotion.discountPercentage}% OFF</span>
-                )}
-                <span className={styles.originalPrice}>De R$ {originalPrice.toFixed(2)}</span>
-              </div>
+              {originalPrice.toFixed(2) != product.currentPrice.toFixed(2) && (
+                <div className={styles.priceHeader}>
+                  {promotion.discountPercentage && (
+                    <span className={styles.discountTag}>
+                      -{promotion.discountPercentage}% OFF
+                    </span>
+                  )}
+                  <span className={styles.originalPrice}>
+                    De R$ {originalPrice.toFixed(2)}
+                  </span>
+                </div>
+              )}
               <div className={styles.currentPrice}>
                 <span className={styles.currency}>R$</span>
-                <span className={styles.value}>{product.currentPrice.toFixed(2)}</span>
+                <span className={styles.value}>
+                  {product.currentPrice.toFixed(2)}
+                </span>
               </div>
-              
+
               {promotion.description && (
                 <div className={styles.promoCallout}>
                   <strong>Destaque:</strong> {promotion.description}
                 </div>
               )}
 
-              <ShareButtons 
-                url={`https://barganito.com.br/oferta/${id}`} 
-                title={product.name} 
+              <ShareButtons
+                url={`https://barganito.com.br/oferta/${id}`}
+                title={product.name}
               />
 
               <ReportButton promotionId={id} />
 
-              <a 
-                href={product.url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={product.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={styles.buyButton}
               >
                 Ir para a Loja
@@ -106,13 +124,16 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
             <div className={styles.descriptionSection}>
               <h3>Sobre este produto</h3>
-              <p>{product.description || "Nenhuma descrição detalhada disponível."}</p>
+              <p>
+                {product.description ||
+                  "Nenhuma descrição detalhada disponível."}
+              </p>
             </div>
 
-            <VoteControl 
-              promotionId={id} 
-              initialVote={userVote} 
-              count={rating.count} 
+            <VoteControl
+              promotionId={id}
+              initialVote={userVote}
+              count={rating.count}
             />
 
             <CommentSection promotionId={id} />
