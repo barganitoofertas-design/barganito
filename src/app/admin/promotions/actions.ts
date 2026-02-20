@@ -79,13 +79,30 @@ export async function getPromotions(params: {
         where,
         include: {
           product: true,
-          user: true,
         } as any,
         orderBy: { startsAt: 'desc' },
         skip,
         take: pageSize,
       }),
     ]);
+
+    // Fetch user details manually because the 'user' relation is broken in the client
+    const userIds = [...new Set(promotions.map((p: any) => p.userId).filter(Boolean))];
+    let usersMap: Record<string, { name: string | null, email: string | null }> = {};
+
+    if (userIds.length > 0) {
+      try {
+        const users = await prisma.user.findMany({
+          where: { id: { in: userIds as string[] } },
+          select: { id: true, name: true, email: true }
+        });
+        users.forEach(u => {
+          usersMap[u.id] = { name: u.name, email: u.email };
+        });
+      } catch (e) {
+        console.error('Failed to fetch user details:', e);
+      }
+    }
 
     // Fetch report counts using raw SQL
     const promoIds = promotions.map((p: any) => p.id);
@@ -108,13 +125,14 @@ export async function getPromotions(params: {
       }
     }
 
-    const promotionsWithReports = promotions.map((p: any) => ({
+    const promotionsWithReportsAndUsers = promotions.map((p: any) => ({
       ...p,
+      user: p.userId ? usersMap[p.userId] : null,
       reportCount: reportsMap[p.id] || 0
     }));
 
     return {
-      promotions: promotionsWithReports,
+      promotions: promotionsWithReportsAndUsers,
       total,
       totalPages: Math.ceil(total / pageSize),
       currentPage: page,
