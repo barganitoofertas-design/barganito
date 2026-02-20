@@ -37,10 +37,12 @@ export default function PromotionList({ onEdit, categories }: PromotionListProps
   const [status, setStatus] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const pageSize = 10;
 
   const fetchPromotions = useCallback(async () => {
     setLoading(true);
+    setServerError(null);
     try {
       const data = await getPromotions({ 
         page, 
@@ -49,10 +51,17 @@ export default function PromotionList({ onEdit, categories }: PromotionListProps
         status, 
         categoryId: selectedCategory 
       });
+      
+      if ((data as any).error) {
+        setServerError((data as any).error);
+        return;
+      }
+
       setPromotions(data.promotions as any);
       setTotal(data.total);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch promotions:', error);
+      setServerError(error.message || 'Erro ao carregar promoções');
     } finally {
       setLoading(false);
     }
@@ -240,6 +249,12 @@ export default function PromotionList({ onEdit, categories }: PromotionListProps
       `}</style>
 
       <div style={{ overflowX: 'auto', position: 'relative', minHeight: '200px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+        {serverError && (
+          <div style={{ padding: '1rem', background: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #fca5a5', fontWeight: '500' }}>
+            ⚠️ <strong>Erro:</strong> {serverError}
+            <p style={{ fontSize: '0.8rem', marginTop: '5px' }}>Tente recarregar a página ou verifique a conexão com o banco de dados.</p>
+          </div>
+        )}
         {loading && promotions.length > 0 && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(255, 255, 255, 0.4)', zIndex: 5, borderRadius: '12px' }}></div>
         )}

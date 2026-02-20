@@ -30,96 +30,105 @@ export async function getPromotions(params: {
     console.error('Failed to auto-expire promotions:', error);
   }
 
-  const where: any = {
-    AND: []
-  };
+  try {
+    const where: any = {
+      AND: []
+    };
 
-  if (query) {
-    where.AND.push({
-      OR: [
-        { product: { name: { contains: query, mode: 'insensitive' } } },
-        { description: { contains: query, mode: 'insensitive' } }
-      ]
-    });
-  }
-
-  if (categoryId) {
-    where.AND.push({ product: { categoryId: categoryId } });
-  }
-
-  if (status === 'active') {
-    where.AND.push({ isActive: true });
-  } else if (status === 'inactive') {
-    where.AND.push({ isActive: false, expiresAt: { not: null } });
-  } else if (status === 'suggested') {
-    where.AND.push({ isActive: false, expiresAt: null });
-  } else if (status === 'reported') {
-    // Usar consulta bruta para pegar IDs de promoções com denúncias
-    // contornando o erro de relação inexistente no Prisma Client desatualizado
-    try {
-      const reported = await prisma.$queryRawUnsafe<{ promotionId: string }[]>(
-        `SELECT DISTINCT "promotionId" FROM "Report"`
-      );
-      const reportIds = reported.map(r => r.promotionId);
-      
-      if (reportIds.length > 0) {
-        where.AND.push({ id: { in: reportIds } });
-      } else {
-        // Se não há denúncias, força o resultado a ser vazio
-        where.AND.push({ id: 'none' }); 
-      }
-    } catch (e) {
-      console.error('Failed to fetch reported IDs:', e);
-      where.AND.push({ id: 'error' });
-    }
-  }
-
-  const [total, promotions] = await Promise.all([
-    prisma.promotion.count({ where }),
-    prisma.promotion.findMany({
-      where,
-      include: {
-        product: true,
-        user: true,
-      } as any,
-      orderBy: { startsAt: 'desc' },
-      skip,
-      take: pageSize,
-    }),
-  ]);
-
-  // Fetch report counts using raw SQL
-  const promoIds = promotions.map((p: any) => p.id);
-  let reportsMap: Record<string, number> = {};
-
-  if (promoIds.length > 0) {
-    try {
-      const reports = await prisma.$queryRawUnsafe<any[]>(
-        `SELECT "promotionId", COUNT(*)::int as count 
-         FROM "Report" 
-         WHERE "promotionId" IN (${promoIds.map((_: string, i: number) => `$${i + 1}`).join(',')})
-         GROUP BY "promotionId"`,
-        ...promoIds
-      );
-      reports.forEach(r => {
-        reportsMap[r.promotionId] = r.count;
+    if (query) {
+      where.AND.push({
+        OR: [
+          { product: { name: { contains: query, mode: 'insensitive' } } },
+          { description: { contains: query, mode: 'insensitive' } }
+        ]
       });
-    } catch (e) {
-      console.error('Failed to fetch report counts for admin:', e);
     }
+
+    if (categoryId) {
+      where.AND.push({ product: { categoryId: categoryId } });
+    }
+
+    if (status === 'active') {
+      where.AND.push({ isActive: true });
+    } else if (status === 'inactive') {
+      where.AND.push({ isActive: false, expiresAt: { not: null } });
+    } else if (status === 'suggested') {
+      where.AND.push({ isActive: false, expiresAt: null });
+    } else if (status === 'reported') {
+      try {
+        const reported = await prisma.$queryRawUnsafe<{ promotionId: string }[]>(
+          `SELECT DISTINCT "promotionId" FROM "Report"`
+        );
+        const reportIds = reported.map(r => r.promotionId);
+        
+        if (reportIds.length > 0) {
+          where.AND.push({ id: { in: reportIds } });
+        } else {
+          where.AND.push({ id: 'none' }); 
+        }
+      } catch (e) {
+        console.error('Failed to fetch reported IDs:', e);
+        // If Report table doesn't exist, we fallback to showing nothing for "reported" filter
+        where.AND.push({ id: 'none' });
+      }
+    }
+
+    const [total, promotions] = await Promise.all([
+      prisma.promotion.count({ where }),
+      prisma.promotion.findMany({
+        where,
+        include: {
+          product: true,
+          user: true,
+        } as any,
+        orderBy: { startsAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+    ]);
+
+    // Fetch report counts using raw SQL
+    const promoIds = promotions.map((p: any) => p.id);
+    let reportsMap: Record<string, number> = {};
+
+    if (promoIds.length > 0) {
+      try {
+        const reports = await prisma.$queryRawUnsafe<any[]>(
+          `SELECT "promotionId", COUNT(*)::int as count 
+           FROM "Report" 
+           WHERE "promotionId" IN (${promoIds.map((_: string, i: number) => `$${i + 1}`).join(',')})
+           GROUP BY "promotionId"`,
+          ...promoIds
+        );
+        reports.forEach(r => {
+          reportsMap[r.promotionId] = r.count;
+        });
+      } catch (e) {
+        console.error('Failed to fetch report counts for admin:', e);
+      }
+    }
+
+    const promotionsWithReports = promotions.map((p: any) => ({
+      ...p,
+      reportCount: reportsMap[p.id] || 0
+    }));
+
+    return {
+      promotions: promotionsWithReports,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+      currentPage: page,
+    };
+  } catch (error: any) {
+    console.error('CRITICAL ERROR in getPromotions:', error);
+    return {
+      promotions: [],
+      total: 0,
+      totalPages: 0,
+      currentPage: page,
+      error: error.message || 'Internal error'
+    };
   }
-
-  const promotionsWithReports = promotions.map((p: any) => ({
-    ...p,
-    reportCount: reportsMap[p.id] || 0
-  }));
-
-  return {
-    promotions: promotionsWithReports,
-    total,
-    totalPages: Math.ceil(total / pageSize),
-    currentPage: page,
-  };
 }
 
 export async function searchProducts(query: string) {
