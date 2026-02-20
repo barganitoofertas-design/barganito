@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { reportPromotion } from '@/app/oferta/report-actions';
-import styles from './ReportButton.module.css';
+import { useState } from "react";
+import { reportPromotion } from "@/app/oferta/report-actions";
+import styles from "./ReportButton.module.css";
 
 interface ReportButtonProps {
   promotionId: string;
@@ -10,7 +10,7 @@ interface ReportButtonProps {
 
 export default function ReportButton({ promotionId }: ReportButtonProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleReport = async () => {
@@ -21,13 +21,13 @@ export default function ReportButton({ promotionId }: ReportButtonProps) {
 
     setIsSubmitting(true);
     const result = await reportPromotion(promotionId);
-    
+
     if (result.success) {
-      setMessage(result.message || 'Denúncia enviada.');
+      setMessage(result.message || "Denúncia enviada.");
     } else {
-      setMessage(result.message || 'Erro ao enviar denúncia.');
+      setMessage(result.message || "Erro ao enviar denúncia.");
     }
-    
+
     setIsSubmitting(false);
     setShowConfirm(false);
   };
@@ -35,13 +35,13 @@ export default function ReportButton({ promotionId }: ReportButtonProps) {
   return (
     <div className={styles.reportSection}>
       {!message ? (
-        <button 
+        <button
           className={styles.reportButton}
           onClick={handleReport}
           disabled={isSubmitting}
         >
           <span>🚩</span>
-          {showConfirm ? 'Confirmar Denúncia?' : 'Denunciar esta Oferta'}
+          {showConfirm ? "Confirmar?" : "Algo está errado com esta Oferta"}
         </button>
       ) : (
         <p className={styles.statusMessage}>{message}</p>
