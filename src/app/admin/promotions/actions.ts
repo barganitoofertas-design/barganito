@@ -73,6 +73,33 @@ export async function getPromotions(params: {
       }
     }
 
+    // Build dynamic parameters to avoid index/type mismatch
+    const countParams: any[] = [];
+    let countWhereExtra = '';
+    
+    if (query) {
+      countParams.push(`%${query}%`);
+      countWhereExtra += ` AND (p."name" ILIKE $${countParams.length}::text OR promo."description" ILIKE $${countParams.length}::text)`;
+    }
+    
+    if (categoryId) {
+      countParams.push(categoryId);
+      countWhereExtra += ` AND p."categoryId" = $${countParams.length}::text`;
+    }
+
+    const fetchParams: any[] = [pageSize, skip];
+    let fetchWhereExtra = '';
+    
+    if (query) {
+      fetchParams.push(`%${query}%`);
+      fetchWhereExtra += ` AND (p."name" ILIKE $${fetchParams.length}::text OR promo."description" ILIKE $${fetchParams.length}::text)`;
+    }
+    
+    if (categoryId) {
+      fetchParams.push(categoryId);
+      fetchWhereExtra += ` AND p."categoryId" = $${fetchParams.length}::text`;
+    }
+
     const [totalResult, promotionsRaw] = await Promise.all([
       prisma.$queryRawUnsafe<{ count: number }[]>(
         `SELECT COUNT(*)::int as count
@@ -84,10 +111,8 @@ export async function getPromotions(params: {
            status === 'suggested' ? 'AND promo."isActive" = false AND promo."expiresAt" IS NULL' :
            status === 'reported' ? 'AND promo."id" IN (SELECT DISTINCT "promotionId" FROM "Report")' : ''
          }
-         ${query ? 'AND (p."name" ILIKE $1 OR promo."description" ILIKE $1)' : ''}
-         ${categoryId ? 'AND p."categoryId" = $2' : ''}`,
-        query ? `%${query}%` : undefined,
-        categoryId || undefined
+         ${countWhereExtra}`,
+        ...countParams
       ),
       prisma.$queryRawUnsafe<any[]>(
         `SELECT promo.*, 
@@ -100,14 +125,10 @@ export async function getPromotions(params: {
            status === 'suggested' ? 'AND promo."isActive" = false AND promo."expiresAt" IS NULL' :
            status === 'reported' ? 'AND promo."id" IN (SELECT DISTINCT "promotionId" FROM "Report")' : ''
          }
-         ${query ? 'AND (p."name" ILIKE $3 OR promo."description" ILIKE $3)' : ''}
-         ${categoryId ? 'AND p."categoryId" = $4' : ''}
+         ${fetchWhereExtra}
          ORDER BY promo."startsAt" DESC
-         LIMIT $1 OFFSET $2`,
-        pageSize,
-        skip,
-        query ? `%${query}%` : undefined,
-        categoryId || undefined
+         LIMIT $1::int OFFSET $2::int`,
+        ...fetchParams
       ).then(res => res.filter(Boolean))
     ]);
 
