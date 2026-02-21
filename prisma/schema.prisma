@@ -199,3 +199,11 @@ model PushSubscription {
   auth      String
   createdAt DateTime @default(now())
 }
+
+model ObtainedPromotion {
+  id             Int      @id @default(autoincrement())
+  message_text   String?
+  original_url   String?
+  normalized_url String?
+  captured_at    DateTime @default(now())
+}

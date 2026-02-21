@@ -139,3 +139,14 @@ body {
     grid-template-columns: repeat(5, 1fr);
   }
 }
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
