@@ -6,6 +6,7 @@ import PromotionList from "./PromotionList";
 import ProductForm from "./ProductForm";
 import Modal from "@/components/Modal/Modal";
 import CommentManager from "./CommentManager";
+import ObtainedPromotionsManager from "./ObtainedPromotionsManager";
 
 interface PromotionManagerProps {
   categories: any[];
@@ -85,6 +86,10 @@ export default function PromotionManager({
           onEdit={handleEdit}
           categories={categories}
         />
+      </div>
+
+      <div style={{ marginTop: "3rem" }}>
+        <ObtainedPromotionsManager categories={categories} />
       </div>
 
       <div style={{ marginTop: "3rem" }}>
