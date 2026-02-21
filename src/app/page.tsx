@@ -39,7 +39,12 @@ async function getProducts(searchParams: {
     },
   };
 
-  if (category && category !== "all" && category !== "best") {
+  if (
+    category &&
+    category !== "all" &&
+    category !== "best" &&
+    category !== "parcelado"
+  ) {
     where.category = { slug: category };
   }
 
@@ -53,7 +58,74 @@ async function getProducts(searchParams: {
   try {
     let products: any[], total: number;
 
-    if (category === "best") {
+    if (category === "parcelado") {
+      const productsRaw = await prisma.$queryRawUnsafe<any[]>(
+        `
+        SELECT p.*, c.name as "categoryName", c.slug as "categorySlug",
+               promo.id as "promoId", promo."discountPercentage", promo."description" as "promoDescription",
+               promo."paymentMethod",
+               sub.avg_rating, sub.vote_count
+        FROM "Product" p
+        JOIN "Category" c ON p."categoryId" = c.id
+        JOIN "Promotion" promo ON p.id = promo."productId"
+        LEFT JOIN (
+            SELECT "promotionId", AVG(value)::float as avg_rating, COUNT(*)::int as vote_count
+            FROM "Vote"
+            GROUP BY "promotionId"
+        ) sub ON promo.id = sub."promotionId"
+        WHERE promo."isActive" = true 
+          AND (promo."startsAt" IS NULL OR promo."startsAt" <= $1)
+          AND (promo."expiresAt" IS NULL OR promo."expiresAt" >= $1)
+          AND promo."paymentMethod" IN ('parcelado', 'app_prazo')
+        ORDER BY promo."createdAt" DESC
+        OFFSET $2 LIMIT $3
+      `,
+        now,
+        skip,
+        limit,
+      );
+
+      const totalResult = await prisma.$queryRawUnsafe<{ count: number }[]>(
+        `
+        SELECT COUNT(*)::int as count
+        FROM "Promotion" promo
+        WHERE promo."isActive" = true
+          AND (promo."startsAt" IS NULL OR promo."startsAt" <= $1)
+          AND (promo."expiresAt" IS NULL OR promo."expiresAt" >= $1)
+          AND promo."paymentMethod" IN ('parcelado', 'app_prazo')
+      `,
+        now,
+      );
+
+      total = totalResult[0]?.count || 0;
+
+      products = productsRaw.map((r) => ({
+        id: r.id,
+        name: r.name,
+        currentPrice: r.currentPrice,
+        imageUrl: r.imageUrl,
+        category: { name: r.categoryName, slug: r.categorySlug },
+        promotions: [
+          {
+            id: r.promoId,
+            discountPercentage: r.discountPercentage,
+            description: r.promoDescription,
+            paymentMethod: r.paymentMethod,
+          },
+        ],
+        rating: {
+          average: r.avg_rating || 0,
+          count: r.vote_count || 0,
+          level: !r.avg_rating
+            ? "OK"
+            : r.avg_rating >= 4.5
+              ? "TOP"
+              : r.avg_rating >= 3.5
+                ? "Muito Bom"
+                : "OK",
+        },
+      }));
+    } else if (category === "best") {
       const productsRaw = await prisma.$queryRawUnsafe<any[]>(
         `
         SELECT p.*, c.name as "categoryName", c.slug as "categorySlug",

@@ -101,6 +101,7 @@ model Promotion {
   expiresAt          DateTime?
   isActive           Boolean  @default(true)
   description        String?
+  paymentMethod      String?
   startsAt           DateTime? @default(now())
   updatedAt          DateTime @default(now()) @updatedAt
   createdAt          DateTime @default(now())
