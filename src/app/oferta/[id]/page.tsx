@@ -9,7 +9,9 @@ import CommentSection from "@/components/Comments/CommentSection";
 import Thermometer from "@/components/Thermometer/Thermometer";
 import VoteControl from "@/components/Thermometer/VoteControl";
 import ReportButton from "@/components/Report/ReportButton";
+import PaymentMethodIcon from "@/components/PaymentMethodIcon";
 import { getPromotionRating, getUserVote } from "../vote-actions";
+import { formatPrice } from "@/lib/utils";
 
 interface OfferPageProps {
   params: Promise<{ id: string }>;
@@ -74,13 +76,14 @@ export default async function OfferPage({ params }: OfferPageProps) {
                 <span className={styles.categoryBadge}>
                   {product.category?.name}
                 </span>
+                <PaymentMethodIcon paymentMethod={promotion.paymentMethod} />
                 <Thermometer level={rating.level} />
               </div>
               <h1 className={styles.productTitle}>{product.name}</h1>
             </div>
 
             <div className={styles.priceCard}>
-              {originalPrice.toFixed(2) != product.currentPrice.toFixed(2) && (
+              {Math.abs(originalPrice - product.currentPrice) > 0.01 && (
                 <div className={styles.priceHeader}>
                   {promotion.discountPercentage && (
                     <span className={styles.discountTag}>
@@ -88,14 +91,14 @@ export default async function OfferPage({ params }: OfferPageProps) {
                     </span>
                   )}
                   <span className={styles.originalPrice}>
-                    De R$ {originalPrice.toFixed(2)}
+                    De {formatPrice(originalPrice)}
                   </span>
                 </div>
               )}
               <div className={styles.currentPrice}>
                 <span className={styles.currency}>R$</span>
                 <span className={styles.value}>
-                  {product.currentPrice.toFixed(2)}
+                  {formatPrice(product.currentPrice).replace("R$ ", "")}
                 </span>
               </div>
 

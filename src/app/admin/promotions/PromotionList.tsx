@@ -6,7 +6,8 @@ import {
   togglePromotionStatus,
   deletePromotion,
 } from "./actions";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, formatPaymentMethod } from "@/lib/utils";
+import PaymentMethodIcon from "@/components/PaymentMethodIcon";
 
 interface Promotion {
   id: string;
@@ -16,6 +17,7 @@ interface Promotion {
   expiresAt: string | Date;
   isActive: boolean;
   description: string | null;
+  paymentMethod: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;
   product: {
@@ -49,6 +51,7 @@ export default function PromotionList({
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [selectedPromotions, setSelectedPromotions] = useState<string[]>([]);
   const pageSize = 10;
 
   const fetchPromotions = useCallback(async () => {
@@ -85,6 +88,10 @@ export default function PromotionList({
     }
   }, [message]);
 
+  useEffect(() => {
+    setSelectedPromotions([]);
+  }, [page, query, status, selectedCategory]);
+
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     try {
       await togglePromotionStatus(id, !currentStatus);
@@ -93,10 +100,11 @@ export default function PromotionList({
         type: "success",
         text: `Status da promoção ${!currentStatus ? "ativado" : "desativado"} com sucesso.`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error toggling promotion status:", error);
       setMessage({
         type: "error",
-        text: "Erro ao alterar status da promoção.",
+        text: error.message || "Erro ao alterar status da promoção.",
       });
     }
   };
@@ -109,6 +117,7 @@ export default function PromotionList({
       const result = await deletePromotion(id);
       if (result.success) {
         fetchPromotions();
+        setSelectedPromotions((prev) => prev.filter((pId) => pId !== id));
         setMessage({
           type: "success",
           text: "Promoção excluída com sucesso.",
@@ -124,6 +133,72 @@ export default function PromotionList({
         type: "error",
         text: "Erro ao excluir promoção",
       });
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedPromotions(promotions.map((p) => p.id));
+    } else {
+      setSelectedPromotions([]);
+    }
+  };
+
+  const handleSelectPromotion = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedPromotions((prev) => [...prev, id]);
+    } else {
+      setSelectedPromotions((prev) => prev.filter((pId) => pId !== id));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedPromotions.length === 0) return;
+
+    if (
+      !window.confirm(
+        `Tem certeza que deseja excluir ${selectedPromotions.length} promoções selecionadas?`,
+      )
+    )
+      return;
+
+    setLoading(true);
+    try {
+      const deletePromises = selectedPromotions.map(async (id) => {
+        try {
+          return await deletePromotion(id);
+        } catch (error) {
+          console.error(`Error deleting promotion ${id}:`, error);
+          return { success: false, message: "Erro ao excluir" };
+        }
+      });
+
+      const results = await Promise.all(deletePromises);
+
+      const successCount = results.filter((r) => r.success).length;
+      const errorCount = results.length - successCount;
+
+      if (successCount > 0) {
+        fetchPromotions();
+        setSelectedPromotions([]);
+        setMessage({
+          type: "success",
+          text: `${successCount} promoção(ões) excluída(s) com sucesso.${errorCount > 0 ? ` ${errorCount} falhou(aram).` : ""}`,
+        });
+      } else {
+        setMessage({
+          type: "error",
+          text: "Erro ao excluir promoções selecionadas.",
+        });
+      }
+    } catch (error) {
+      console.error("Critical error in handleDeleteSelected:", error);
+      setMessage({
+        type: "error",
+        text: "Erro crítico ao excluir promoções selecionadas",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -419,21 +494,52 @@ export default function PromotionList({
                 background: "var(--background)",
               }}
             >
+              <th style={{ padding: "1.2rem 1rem" }}>
+                <input
+                  type="checkbox"
+                  checked={
+                    selectedPromotions.length === promotions.length &&
+                    promotions.length > 0
+                  }
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                />
+              </th>
               <th style={{ padding: "1.2rem 1rem" }}>Produto</th>
               <th style={{ padding: "1.2rem 1rem" }}>Desconto</th>
               <th style={{ padding: "1.2rem 1rem" }}>Descrição</th>
+              <th style={{ padding: "1.2rem 1rem" }}>Pagamento</th>
               <th style={{ padding: "1.2rem 1rem" }}>Status</th>
               <th style={{ padding: "1.2rem 1rem" }}>Início</th>
               <th style={{ padding: "1.2rem 1rem" }}>Expiração</th>
               <th style={{ padding: "1.2rem 1rem" }}>Modificado</th>
-              <th style={{ padding: "1.2rem 1rem" }}>Ações</th>
+              <th style={{ padding: "1.2rem 1rem" }}>
+                Ações
+                {selectedPromotions.length > 0 && (
+                  <button
+                    onClick={handleDeleteSelected}
+                    style={{
+                      background: "#dc2626",
+                      color: "white",
+                      border: "none",
+                      padding: "0.25rem 0.5rem",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "0.8rem",
+                      marginLeft: "0.5rem",
+                    }}
+                    title={`Excluir ${selectedPromotions.length} selecionados`}
+                  >
+                    🗑️ Excluir ({selectedPromotions.length})
+                  </button>
+                )}
+              </th>
             </tr>
           </thead>
           <tbody>
             {promotions.length === 0 && !loading ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   style={{
                     padding: "4rem",
                     textAlign: "center",
@@ -462,6 +568,15 @@ export default function PromotionList({
                     (e.currentTarget.style.background = "transparent")
                   }
                 >
+                  <td style={{ padding: "1rem" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPromotions.includes(promo.id)}
+                      onChange={(e) =>
+                        handleSelectPromotion(promo.id, e.target.checked)
+                      }
+                    />
+                  </td>
                   <td style={{ padding: "1rem", fontWeight: "500" }}>
                     {promo.product.name}
                   </td>
@@ -488,6 +603,32 @@ export default function PromotionList({
                     }}
                   >
                     {promo.description || "-"}
+                  </td>
+                  <td style={{ padding: "1rem" }}>
+                    <span
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        background: promo.paymentMethod
+                          ? "rgba(34, 197, 94, 0.1)"
+                          : "rgba(156, 163, 175, 0.1)",
+                        color: promo.paymentMethod
+                          ? "#16a34a"
+                          : "var(--text-light)",
+                        fontSize: "0.8rem",
+                        fontWeight: "500",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <PaymentMethodIcon
+                        paymentMethod={promo.paymentMethod}
+                        style={{ fontSize: "1em", margin: 0 }}
+                        showText={false}
+                      />
+                      {formatPaymentMethod(promo.paymentMethod)}
+                    </span>
                   </td>
                   <td style={{ padding: "1rem" }}>
                     <div

@@ -31,9 +31,14 @@ export default function ObtainedPromotionsManager({
     message_text: "",
     normalized_url: "",
   });
+  const [selectedPromotions, setSelectedPromotions] = useState<number[]>([]);
 
   useEffect(() => {
     fetchPromotions(page);
+  }, [page]);
+
+  useEffect(() => {
+    setSelectedPromotions([]);
   }, [page]);
 
   const fetchPromotions = async (pageNum: number = 1) => {
@@ -70,6 +75,7 @@ export default function ObtainedPromotionsManager({
       });
       if (response.ok) {
         setPromotions((prev) => prev.filter((p) => p.id !== id));
+        setSelectedPromotions((prev) => prev.filter((pId) => pId !== id));
       }
     } catch (error) {
       console.error("Error deleting promotion:", error);
@@ -84,6 +90,51 @@ export default function ObtainedPromotionsManager({
     } catch (error) {
       console.error("Error copying URL:", error);
       alert("Erro ao copiar URL");
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedPromotions(promotions.map((p) => p.id));
+    } else {
+      setSelectedPromotions([]);
+    }
+  };
+
+  const handleSelectPromotion = (id: number, checked: boolean) => {
+    if (checked) {
+      setSelectedPromotions((prev) => [...prev, id]);
+    } else {
+      setSelectedPromotions((prev) => prev.filter((pId) => pId !== id));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedPromotions.length === 0) return;
+
+    if (
+      !confirm(
+        `Tem certeza que deseja excluir ${selectedPromotions.length} promoções selecionadas?`,
+      )
+    )
+      return;
+
+    try {
+      const deletePromises = selectedPromotions.map((id) =>
+        fetch(`/api/admin/obtained-promotions/${id}`, {
+          method: "DELETE",
+        }),
+      );
+
+      await Promise.all(deletePromises);
+
+      setPromotions((prev) =>
+        prev.filter((p) => !selectedPromotions.includes(p.id)),
+      );
+      setSelectedPromotions([]);
+    } catch (error) {
+      console.error("Error deleting selected promotions:", error);
+      alert("Erro ao excluir promoções selecionadas");
     }
   };
 
@@ -132,6 +183,16 @@ export default function ObtainedPromotionsManager({
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                <th style={{ padding: "0.5rem", textAlign: "left" }}>
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedPromotions.length === promotions.length &&
+                      promotions.length > 0
+                    }
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                  />
+                </th>
                 <th style={{ padding: "0.5rem", textAlign: "left" }}>ID</th>
                 <th style={{ padding: "0.5rem", textAlign: "left" }}>
                   Mensagem
@@ -145,7 +206,27 @@ export default function ObtainedPromotionsManager({
                 <th style={{ padding: "0.5rem", textAlign: "left" }}>
                   Capturado em
                 </th>
-                <th style={{ padding: "0.5rem", textAlign: "left" }}>Ações</th>
+                <th style={{ padding: "0.5rem", textAlign: "left" }}>
+                  Ações
+                  {selectedPromotions.length > 0 && (
+                    <button
+                      onClick={handleDeleteSelected}
+                      style={{
+                        background: "#ff4d4d",
+                        color: "white",
+                        border: "none",
+                        padding: "0.25rem 0.5rem",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "0.8rem",
+                        marginLeft: "0.5rem",
+                      }}
+                      title={`Excluir ${selectedPromotions.length} selecionados`}
+                    >
+                      🗑️ Excluir ({selectedPromotions.length})
+                    </button>
+                  )}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -154,6 +235,15 @@ export default function ObtainedPromotionsManager({
                   key={promotion.id}
                   style={{ borderBottom: "1px solid var(--border)" }}
                 >
+                  <td style={{ padding: "0.5rem" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedPromotions.includes(promotion.id)}
+                      onChange={(e) =>
+                        handleSelectPromotion(promotion.id, e.target.checked)
+                      }
+                    />
+                  </td>
                   <td style={{ padding: "0.5rem" }}>{promotion.id}</td>
                   <td
                     style={{
@@ -186,7 +276,7 @@ export default function ObtainedPromotionsManager({
                     {promotion.normalized_url}
                   </td>
                   <td style={{ padding: "0.5rem" }}>
-                    {new Date(promotion.captured_at).toLocaleDateString()}
+                    {new Date(promotion.captured_at).toLocaleString()}
                   </td>
                   <td style={{ padding: "0.5rem" }}>
                     <button

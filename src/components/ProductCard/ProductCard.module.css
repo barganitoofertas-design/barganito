@@ -30,6 +30,13 @@
   box-shadow: 0 2px 5px rgba(255, 77, 77, 0.3);
 }
 
+.paymentMethodBadge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+}
+
 .imageContainer {
   width: 100%;
   aspect-ratio: 1/1;

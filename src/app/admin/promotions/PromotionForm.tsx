@@ -278,13 +278,11 @@ export default function PromotionForm({
                   gap: "0.4rem",
                 }}
               >
-                <label htmlFor="isActive">Status</label>
+                <label htmlFor="paymentMethod">Método de Pagamento</label>
                 <select
-                  name="isActive"
-                  id="isActive"
-                  defaultValue={
-                    initialData ? String(initialData.isActive) : "true"
-                  }
+                  name="paymentMethod"
+                  id="paymentMethod"
+                  defaultValue={initialData?.paymentMethod || ""}
                   style={{
                     padding: "0.6rem",
                     borderRadius: "8px",
@@ -292,8 +290,11 @@ export default function PromotionForm({
                     background: "var(--background)",
                   }}
                 >
-                  <option value="true">Ativo</option>
-                  <option value="false">Inativo</option>
+                  <option value="">Selecione (opcional)</option>
+                  <option value="avista">À vista</option>
+                  <option value="parcelado">Parcelado</option>
+                  <option value="app_avista">App à vista</option>
+                  <option value="app_prazo">App a prazo</option>
                 </select>
               </div>
             </div>

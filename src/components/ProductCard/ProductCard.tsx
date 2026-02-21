@@ -1,7 +1,8 @@
 import styles from "./ProductCard.module.css";
-import Image from "next/image";
 import Link from "next/link";
 import Thermometer from "../Thermometer/Thermometer";
+import PaymentMethodIcon from "../PaymentMethodIcon";
+import { formatPrice } from "@/lib/utils";
 
 interface ProductCardProps {
   product: any;
@@ -14,10 +15,16 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className={`card ${styles.card}`}>
-      {hasPromo && (
+      {hasPromo && promotion.discountPercentage && (
         <div className={styles.badge}>-{promotion.discountPercentage}%</div>
       )}
-
+      {hasPromo && promotion.paymentMethod && (
+        <PaymentMethodIcon
+          paymentMethod={promotion.paymentMethod}
+          className={styles.paymentMethodBadge}
+          showText={false}
+        />
+      )}
       <div className={styles.imageContainer}>
         {hasPromo ? (
           <Link href={`/oferta/${promotion.id}`}>
@@ -54,20 +61,18 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         <div className={styles.priceContainer}>
           <span className={styles.currentPrice}>
-            R$ {product.currentPrice.toFixed(2)}
+            {formatPrice(product.currentPrice)}
           </span>
           {hasPromo &&
-            product.currentPrice.toFixed(2) !=
-              (
-                product.currentPrice /
-                (1 - promotion.discountPercentage / 100)
-              ).toFixed(2) && (
+            Math.abs(
+              product.currentPrice -
+                product.currentPrice / (1 - promotion.discountPercentage / 100),
+            ) > 0.01 && (
               <span className={styles.originalPrice}>
-                R${" "}
-                {(
+                {formatPrice(
                   product.currentPrice /
-                  (1 - promotion.discountPercentage / 100)
-                ).toFixed(2)}
+                    (1 - promotion.discountPercentage / 100),
+                )}
               </span>
             )}
         </div>
